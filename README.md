@@ -10,8 +10,9 @@ GMENU is a small DOS menu program (about 6 KB). It lists the game folders in a d
 |---|---|
 | `GMENU.BAT` | Starts the menu. The game directory is set here. |
 | `GMENUPRG.COM` | The compiled menu program. |
-| `GMENU.ASM` | Source code (NASM, 16-bit x86). |
-| `build.sh` | Build script (macOS / Linux). |
+| `SOURCE/GMENU.ASM` | Source code (NASM, 16-bit x86). |
+| `SOURCE/build.sh` | Build script (macOS / Linux). |
+| `gmenu.ini` | Configuration (game directory, build settings). |
 | `MENURUN.BAT` | *Created at runtime:* starts the selected game. |
 | `GMENU.SEL` | *Created at runtime:* the last selected game, the search text, the filters and the Tab setting. |
 
@@ -24,13 +25,14 @@ brew install nasm        # macOS
 sudo apt install nasm    # Debian / Ubuntu
 ```
 
-Then run this in the `GMENU` folder:
+Then run this from the `SOURCE` folder:
 
 ```sh
+cd SOURCE
 ./build.sh
 ```
 
-It produces `GMENUPRG.COM`. To build by hand: `nasm -f bin -o GMENUPRG.COM GMENU.ASM`.
+It produces `GMENUPRG.COM` in the parent folder. To build by hand: `nasm -f bin -o ../GMENUPRG.COM GMENU.ASM` (from `SOURCE/`).
 
 ## Installation
 
