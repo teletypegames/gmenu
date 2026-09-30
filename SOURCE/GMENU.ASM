@@ -19,6 +19,8 @@ GROWS    equ 22             ; game list rows (2..23)
 FROWS    equ 21             ; file list rows in detail view (2..22)
 PROWS    equ 21             ; picker list rows (2..22)
 MAXP     equ 250            ; max values in the picker
+NREC     equ 10             ; recently played games
+WSTEP    equ 3              ; mouse wheel: items per notch
 POOLSZ   equ 6000
 IBUFSZ   equ 4096           ; METADATA.INI / NAME.TXT read buffer
 
@@ -77,6 +79,13 @@ start:
     cmp ax,0FFFFh
     jne .nomouse
     mov byte [hasmouse],1
+    mov ax,11h              ; CuteMouse WheelAPI: enables wheel data in BH of fn 3
+    int 33h
+    cmp ax,574Dh
+    jne .nomouse
+    test cl,1
+    jz .nomouse
+    mov byte [haswheel],1
 .nomouse:
     call scan_games
     cmp word [gcount],0
@@ -103,6 +112,7 @@ start:
     mov cx,[gcount]
     mov dx,13
     call sort_ptrs
+    call load_favs
     call load_sel
     cmp byte [arga],0
     je .noa
@@ -126,6 +136,7 @@ beep:
 %include "browser.asm"
 %include "catalog.asm"
 %include "filter.asm"
+%include "favorites.asm"
 %include "ui.asm"
 %include "launcher.asm"
 %include "session.asm"

@@ -2,7 +2,8 @@
 
 ; GMENU.SEL: folder name (13) + search length (1) + search (32)
 ;            + filters: genre (25), year (11), players (11) + all-files flag (1)
-SELSZ equ 13+1+32+(L_GENRE+1)+(L_YEAR+1)+(L_PLAYERS+1)+1
+;            + favorites-only flag (1) + recently played folder names (NREC * 13)
+SELSZ equ 13+1+32+(L_GENRE+1)+(L_YEAR+1)+(L_PLAYERS+1)+1+1+NREC*13
 
 load_sel:
     mov ax,3D00h
@@ -24,6 +25,13 @@ load_sel:
     mov byte [fyear+L_YEAR],0
     mov byte [fplayers+L_PLAYERS],0
     and byte [showall],1
+    and byte [favonly],1
+    mov di,recent+12
+    mov cx,NREC
+.rt:
+    mov byte [di],0
+    add di,13
+    loop .rt
 .apply:
     mov bl,[flen]
     xor bh,bh

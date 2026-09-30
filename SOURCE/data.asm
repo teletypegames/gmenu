@@ -11,6 +11,7 @@ str_lpar    db '  (',0
 str_rpar    db ')',0
 f_runner    db '\GMENU\MENURUN.BAT',0
 f_sel       db '\GMENU\GMENU.SEL',0
+f_fav       db '\GMENU\GMENU.FAV',0
 s_echo      db '@echo off',13,10,0
 s_cd        db 'cd ',0
 s_call      db 'call ',0
@@ -18,9 +19,9 @@ s_cdroot    db 'cd \'
 crlf        db 13,10,0
 key_tab     db 'NAME',0,'GENRE',0,'YEAR',0,'PLAYERS',0,'DESCRIPTION',0,0
 kv_lim      dw L_NAME,L_GENRE,L_YEAR,L_PLAYERS,L_DESC
-footer_g    db '~',18h,19h,'~ Move ~Enter~ Details ~Type~ Search ~F2~ Genre ~F3~ Year ~F4~ Players ~F5~ Clear ~Esc~ Quit',0
-footer_f    db '~',18h,19h,'~ Move  ~Enter~ Run  ~Tab~ All files  ~A-Z~ Jump  ~Esc~ Back',0
-footer_fa   db '~',18h,19h,'~ Move  ~Enter~ Run  ~Tab~ Executables only  ~A-Z~ Jump  ~Esc~ Back',0
+footer_g    db '~Type~ Search ~F2~Genre ~F3~Year ~F4~Players ~F5~Clear ~F6~Fav ~F7~Fav only ~F8~Recent ~Esc~Quit',0
+footer_f    db '~',18h,19h,'~ Move  ~Enter~ Run  ~Tab~ All files  ~A-Z~ Jump  ~F6~ Favorite  ~Esc~ Back',0
+footer_fa   db '~',18h,19h,'~ Move  ~Enter~ Run  ~Tab~ Executables only  ~A-Z~ Jump  ~F6~ Favorite  ~Esc~ Back',0
 footer_p    db '~',18h,19h,'~ Move  ~Enter~ Select  ~A-Z~ Jump  ~Esc~ Cancel',0
 str_search  db 'Search: ',0
 str_searchh db '   (Backspace: delete, Esc: clear search)',0
@@ -31,6 +32,10 @@ str_cfolder db 'Folder',0
 str_hgenre  db '  Genre: ',0
 str_hyear   db '  Year: ',0
 str_hplayers db '  Players: ',0
+str_hfound  db '  Found: ',0
+str_hof     db ' of ',0
+str_hfav    db '  Favorites',0
+str_precent db 'Recently played',0
 str_pgenre  db 'Filter by genre',0
 str_pyear   db 'Filter by year',0
 str_pplayers db 'Filter by players',0
@@ -59,19 +64,23 @@ fcount   dw 0
 gsel     dw 0
 gtop     dw 0
 vcount   dw 0
-selname  times 13 db 0      ; selname..showall consecutive (GMENU.SEL)
+selname  times 13 db 0      ; selname..recent consecutive (GMENU.SEL)
 flen     db 0
 fbuf     times 32 db 0
 fgenre   times L_GENRE+1 db 0
 fyear    times L_YEAR+1 db 0
 fplayers times L_PLAYERS+1 db 0
 showall  db 0
+favonly  db 0
+recent   times NREC*13 db 0
 %ifdef TEST
 tkp      dw testkeys
 testkeys dw TESTKEYS,0
 %endif
 hasmouse db 0
+haswheel db 0
 prevbtn  db 0
+mwheel   db 0
 listmode db 0
 
 section .bss
@@ -103,6 +112,9 @@ pdest   resw 1
 ptitle  resw 1
 pcount  resw 1
 ppool   resw 1
+pleft   resb 1              ; picker box columns
+pright  resb 1
+favh    resw 1
 wr_w    resb 1
 wr_n    resb 1
 wr_ell  resb 1
@@ -128,6 +140,7 @@ fldbuf  resb L_DESC+2
 gptrs   resw MAXG
 vptrs   resw MAXG
 gsegs   resw MAXG
+gflags  resb MAXG           ; per entry: bit 0 = favorite
 fptrs   resw MAXF           ; shared area: file list / picker (pptrs)
 fnames  resb MAXF*FSZ       ; shared area: filenames / ibuf (read buffer) / pool (picker)
 entries resb MAXG*ESZ

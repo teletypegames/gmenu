@@ -34,6 +34,11 @@ run_list:
     call get_input
     cmp ax,0FF01h
     je .mouse
+    mov bx,[lsel]
+    cmp ax,0FF02h
+    je .wup
+    cmp ax,0FF03h
+    je .wdn
     cmp al,27
     je .esc
     cmp al,13
@@ -79,6 +84,15 @@ run_list:
     cmp bx,[lcount]
     jae .home               ; bottom: wrap to the first item
     jmp .setsel
+.wup:                       ; wheel: move without wrapping
+    sub bx,WSTEP
+    jns .setsel
+    jmp .home
+.wdn:
+    add bx,WSTEP
+    cmp bx,[lcount]
+    jb .setsel
+    jmp .endk
 .pgup:
     mov bx,[lsel]
     sub bx,[lrows]
@@ -160,6 +174,7 @@ fix_top:
 
 ; ---------------------------------------------------------------- input
 ; key: ax = code; left mouse click: ax=FF01h, [mrow]/[mcol]; right: Esc
+; wheel: ax=FF02h (up) / FF03h (down)
 get_input:
 %ifdef TEST
     mov si,[tkp]
@@ -198,6 +213,7 @@ get_input:
     je .l
     mov ax,3
     int 33h
+    mov [mwheel],bh
     mov al,bl
     mov ah,[prevbtn]
     mov [prevbtn],al
@@ -206,7 +222,18 @@ get_input:
     test al,1
     jnz .left
     test al,2
+    jnz .right
+    cmp byte [haswheel],0
+    je .l
+    mov al,[mwheel]
+    test al,al
     jz .l
+    mov ax,0FF03h
+    jns .wr
+    dec ax
+.wr:
+    ret
+.right:
     mov ax,011Bh
     ret
 .left:
@@ -354,9 +381,21 @@ draw_games:
     call row_attr
     COLSTR C_YEAR,W_YEAR
     pop si
+    call is_fav
+    pushf
     mov ah,17h
     call row_attr
     COLSTR C_FOLDER,W_FOLDER
+    mov ah,[rattr]
+    popf
+    jz .blank
+    lea bx,[bp+79*2]        ; favorite: yellow '*' in the last column
+    call fill_to
+    mov ah,[rattr]
+    and ah,0F0h
+    or ah,0Eh
+    mov al,'*'
+    stosw
     mov ah,[rattr]
 .blank:
     lea bx,[bp+160]
@@ -388,9 +427,17 @@ draw_detail:
     mov si,[curgame]
     add si,13
     mov dx,0102h
-    mov cx,LBOXR-5
+    mov cx,LBOXR-7
     mov ah,1Eh
     call box_title
+    mov si,[curgame]
+    call is_fav             ; favorite: " Title * "
+    jz .nf
+    mov al,'*'
+    stosw
+    mov al,' '
+    stosw
+.nf:
     mov dx,0700h
     mov cl,LBOXR
     mov ah,13h
@@ -534,12 +581,17 @@ draw_picker:
     mov cx,23*80
     rep stosw
     mov ah,13h
-    mov dx,0118h
-    mov cx,1737h
+    mov dh,1
+    mov dl,[pleft]
+    mov ch,17h
+    mov cl,[pright]
     call draw_box
     mov si,[ptitle]
-    mov dx,011Ah
-    mov cx,26
+    add dl,2
+    mov cl,[pright]
+    sub cl,[pleft]
+    sub cl,5
+    xor ch,ch
     mov ah,1Eh
     call box_title
     mov word [rowi],0
@@ -550,10 +602,11 @@ draw_picker:
     jae .r
     mov dh,[rowi]
     add dh,2
-    mov dl,37h
+    mov dl,[pright]
     call scr_at
     mov bp,di
-    mov dl,19h
+    mov dl,[pleft]
+    inc dl
     call scr_at
     mov ah,1Fh
     cmp bx,[lsel]
@@ -563,7 +616,10 @@ draw_picker:
     call get_item
     mov al,' '
     stosw
-    mov cx,28
+    mov cl,[pright]
+    sub cl,[pleft]
+    sub cl,3
+    xor ch,ch
     call put_str
     mov bx,bp
     call fill_to

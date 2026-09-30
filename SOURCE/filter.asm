@@ -24,12 +24,14 @@ filters_active:             ; ZF=1 if no active filters
     mov al,[fgenre]
     or al,[fyear]
     or al,[fplayers]
+    or al,[favonly]
     ret
 
 clear_filters:
     mov byte [fgenre],0
     mov byte [fyear],0
     mov byte [fplayers],0
+    mov byte [favonly],0
     jmp refilter
 
 filter_clear:
@@ -100,8 +102,15 @@ apply_filter:
     ret
 
 ; si = entry -> ZF=1 if it matches (si preserved)
-; filters: GENRE / YEAR / PLAYERS exact match; search: title, folder name or description
+; filters: favorites only, GENRE / YEAR / PLAYERS exact match; search: title, folder name or description
 matches:
+    cmp byte [favonly],0
+    je .nofav
+    call is_fav
+    jnz .nofav
+    or al,1                 ; not a favorite: ZF=0
+    ret
+.nofav:
     push si
     mov bl,F_GENRE
     mov di,fgenre
@@ -245,6 +254,8 @@ pick_filter:
 .fnd:
     mov [lsel],dx
 .run:
+    mov byte [pleft],18h
+    mov byte [pright],37h
     mov byte [listmode],2
     mov ax,[pcount]
     mov [lcount],ax

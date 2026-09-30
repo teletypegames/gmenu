@@ -190,3 +190,19 @@ strend:                     ; di -> the terminating 0
     inc di
     jmp strend
 .r: ret
+
+num_str:                    ; ax -> decimal digits at di, di points to the terminating 0
+    mov bx,10
+    xor cx,cx
+.d: xor dx,dx
+    div bx
+    push dx
+    inc cx
+    test ax,ax
+    jnz .d
+.o: pop ax
+    add al,'0'
+    stosb
+    loop .o
+    mov byte [di],0
+    ret

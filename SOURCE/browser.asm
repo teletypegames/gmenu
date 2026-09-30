@@ -65,6 +65,12 @@ game_loop:
     mov dx,str_pplayers
     cmp ah,3Eh              ; F4
     je .pick
+    cmp ah,40h              ; F6: toggle favorite
+    je .fav
+    cmp ah,41h              ; F7: favorites only
+    je .favonly
+    cmp ah,42h              ; F8: recently played
+    je .recent
     cmp ah,3Fh              ; F5: clear filters
     jne game_loop
     call clear_filters
@@ -72,6 +78,25 @@ game_loop:
 .pick:
     call pick_filter
     jmp game_loop
+.fav:
+    cmp word [vcount],0
+    je game_loop
+    mov bx,[gsel]
+    shl bx,1
+    mov si,[vptrs+bx]
+    call toggle_fav
+    push word [gsel]        ; keep the position (the game may drop out of the list)
+    call apply_filter
+    pop word [gsel]
+    jmp game_loop
+.favonly:
+    xor byte [favonly],1
+    call refilter
+    jmp game_loop
+.recent:
+    call pick_recent
+    jc game_loop
+    jmp detail
 
 ; ---------------------------------------------------------------- detail view
 detail:                     ; si = game entry
@@ -112,15 +137,23 @@ detail:                     ; si = game entry
     jmp .loop
 .run:
     call write_runner
+    call add_recent
     call save_sel
     call restore_screen
     mov ax,4C00h
     int 21h
 .key:
+    cmp ah,40h              ; F6: toggle favorite
+    je .fav
     cmp ah,0Fh              ; Tab: executables / all files
     jne .loop
     xor byte [showall],1
     jmp .rescan
+.fav:
+    mov si,[curgame]
+    call toggle_fav
+    call apply_filter       ; the game list may change (favorites only)
+    jmp .loop
 
 ; ---------------------------------------------------------------- scanning files
 scan_files:
@@ -221,10 +254,29 @@ build_file_header:          ; header: "Title  (FOLDER)", dirbuf: full folder pat
     mov si,[curgame]
     jmp strcpy
 
-build_game_header:          ; header: "Games  (\COLLECT)" + active filters
+build_game_header:          ; header: "Games  (\COLLECT)" + match count + active filters
     mov di,hdrbuf
     mov si,hdr_games
     call strcpy
+    call filters_active
+    jnz .cnt
+    cmp byte [flen],0
+    je .fo
+.cnt:
+    mov si,str_hfound
+    call strcpy
+    mov ax,[vcount]
+    call num_str
+    mov si,str_hof
+    call strcpy
+    mov ax,[gcount]
+    call num_str
+.fo:
+    cmp byte [favonly],0
+    je .fl
+    mov si,str_hfav
+    call strcpy
+.fl:
     mov bx,fgenre
     mov si,str_hgenre
     call .add
