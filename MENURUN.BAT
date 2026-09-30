@@ -1,6 +1,6 @@
 @echo off
 C:
-cd \COLLECT\TSUZUKI
-SUZUKI.EXE
+cd \COLLECT\TYRIAN
+TYRIAN.EXE
 C:
 cd \
