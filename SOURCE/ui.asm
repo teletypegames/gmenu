@@ -71,13 +71,13 @@ run_list:
     ret
 .up:
     test bx,bx
-    jz .wait
+    jz .endk                ; top: wrap to the last item
     dec bx
     jmp .setsel
 .down:
     inc bx
     cmp bx,[lcount]
-    jae .wait
+    jae .home               ; bottom: wrap to the first item
     jmp .setsel
 .pgup:
     mov bx,[lsel]
