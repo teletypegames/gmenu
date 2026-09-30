@@ -1,38 +1,38 @@
-; GMENUPRG.COM - jatekmenu a \COLLECT mappahoz (DOS / DOSBox)
-; Forditas: nasm -f bin -o GMENUPRG.COM GMENU.ASM
-; Inditas: GMENU.BAT -> GMENUPRG.COM /B [/A] [jatekkonyvtar]  (alapertelmezes: \COLLECT)
-;          /A = a jatek mappajaban az osszes fajl latszik, nem csak a futtathatok
-; Kilepesi kod: 0 = \GMENU\MENURUN.BAT elkeszult (futtatni kell), 1 = kilepes, 2 = hiba
+; GMENUPRG.COM - game menu for the \COLLECT folder (DOS / DOSBox)
+; Build: nasm -f bin -o GMENUPRG.COM GMENU.ASM
+; Launch: GMENU.BAT -> GMENUPRG.COM /B [/A] [game_directory]  (default: \COLLECT)
+;         /A = all files are shown in the game's folder, not just executables
+; Exit code: 0 = \GMENU\MENURUN.BAT created (must be run), 1 = quit, 2 = error
 ;
-; Mappankent: METADATA.INI (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION), ha nincs: NAME.TXT
-; A GENRE/YEAR/PLAYERS/DESCRIPTION egy tavoli (64 KB feletti) szegmensben all:
-; jatekonkent egy bekezdeshatarra igazitott rekord: genre,0,year,0,players,0,desc,0
+; Per folder: METADATA.INI (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION), if missing: NAME.TXT
+; The GENRE/YEAR/PLAYERS/DESCRIPTION reside in a far (above 64 KB) segment:
+; per game a paragraph-aligned record: genre,0,year,0,players,0,desc,0
 
 bits 16
 org 100h
 
-MAXG     equ 600            ; max jatek
-ESZ      equ 64             ; bejegyzes merete: 13 byte mappanev + 51 byte cim
-MAXF     equ 600            ; max fajl egy mappaban
-FSZ      equ 13             ; fajlnev merete (8.3 + 0)
-GROWS    equ 22             ; jateklista sorai (2..23)
-FROWS    equ 21             ; fajllista sorai a reszletes nezetben (2..22)
-PROWS    equ 21             ; valaszto lista sorai (2..22)
-MAXP     equ 250            ; max ertek a valasztoban
+MAXG     equ 600            ; max games
+ESZ      equ 64             ; entry size: 13-byte folder name + 51-byte title
+MAXF     equ 600            ; max files per folder
+FSZ      equ 13             ; filename size (8.3 + 0)
+GROWS    equ 22             ; game list rows (2..23)
+FROWS    equ 21             ; file list rows in detail view (2..22)
+PROWS    equ 21             ; picker list rows (2..22)
+MAXP     equ 250            ; max values in the picker
 POOLSZ   equ 6000
-IBUFSZ   equ 4096           ; METADATA.INI / NAME.TXT olvasasi puffer
+IBUFSZ   equ 4096           ; METADATA.INI / NAME.TXT read buffer
 
-F_GENRE   equ 0             ; mezok sorrendje a tavoli rekordban
+F_GENRE   equ 0             ; field order in the far record
 F_YEAR    equ 1
 F_PLAYERS equ 2
 F_DESC    equ 3
-L_NAME    equ 50            ; mezok max hossza
+L_NAME    equ 50            ; max field lengths
 L_GENRE   equ 24
 L_YEAR    equ 10
 L_PLAYERS equ 10
 L_DESC    equ 2000
 
-C_TITLE  equ 1              ; jateklista oszlopai
+C_TITLE  equ 1              ; game list columns
 W_TITLE  equ 44
 C_GENRE  equ 46
 W_GENRE  equ 15
@@ -41,17 +41,17 @@ W_YEAR   equ 4
 C_FOLDER equ 67
 W_FOLDER equ 12
 
-LBOXR    equ 55             ; reszletes nezet: bal doboz jobb szele
-FCOL     equ 57             ; fajllista elso oszlopa (jobb doboz belseje)
+LBOXR    equ 55             ; detail view: right edge of left box
+FCOL     equ 57             ; file list first column (inside right box)
 
 %if MAXF*FSZ < IBUFSZ || MAXF*FSZ < POOLSZ || MAXF < MAXP
-%error "a fnames/fptrs terulet kicsi az ibuf/pool/pptrs szamara"
+%error "the fnames/fptrs area is too small for ibuf/pool/pptrs"
 %endif
 
 start:
     cld
     call parse_args
-    cmp byte [argb],0       ; csak a GMENU.BAT-bol (/B kapcsoloval) indulhat
+    cmp byte [argb],0       ; can only be launched from GMENU.BAT (with /B switch)
     jne .argok
     mov dx,msg_usebat
     mov ah,9
@@ -59,15 +59,15 @@ start:
     mov ax,4C02h
     int 21h
 .argok:
-    mov ax,cs               ; tavoli rekordok a program 64 KB-ja utan
+    mov ax,cs               ; far records after the program's 64 KB
     add ax,1000h
     mov [heapseg],ax
-    mov ax,[2]              ; PSP: a szabad memoria teteje
+    mov ax,[2]              ; PSP: top of available memory
     mov [memtop],ax
     mov ax,3
     int 10h
     mov ah,1
-    mov cx,2000h            ; szoveges kurzor elrejtese
+    mov cx,2000h            ; hide text cursor
     int 10h
     mov ah,1Ah
     mov dx,dta
@@ -85,7 +85,7 @@ start:
     mov dx,msg_nogames
     mov ah,9
     int 21h
-    mov di,colldir          ; konyvtar kiirasa
+    mov di,colldir          ; print directory
     call strend
     mov cx,di
     sub cx,colldir
@@ -136,7 +136,7 @@ game_loop:
     mov si,[vptrs+bx]
     jmp detail
 .esc:
-    cmp byte [flen],0       ; Esc: elobb a keresest, aztan a szuroket torli
+    cmp byte [flen],0       ; Esc: clears search first, then filters
     je .esc2
     call filter_clear
     jmp game_loop
@@ -175,7 +175,7 @@ game_loop:
     mov dx,str_pplayers
     cmp ah,3Eh              ; F4
     je .pick
-    cmp ah,3Fh              ; F5: szurok torlese
+    cmp ah,3Fh              ; F5: clear filters
     jne game_loop
     call clear_filters
     jmp game_loop
@@ -183,8 +183,8 @@ game_loop:
     call pick_filter
     jmp game_loop
 
-; ---------------------------------------------------------------- reszletes nezet
-detail:                     ; si = jatek bejegyzes
+; ---------------------------------------------------------------- detail view
+detail:                     ; si = game entry
     mov [curgame],si
     call build_file_header
 .rescan:
@@ -218,7 +218,7 @@ detail:                     ; si = jatek bejegyzes
     call is_exec
     pop si
     je .run
-    call beep               ; nem futtathato fajl
+    call beep               ; not an executable file
     jmp .loop
 .run:
     call write_runner
@@ -227,7 +227,7 @@ detail:                     ; si = jatek bejegyzes
     mov ax,4C00h
     int 21h
 .key:
-    cmp ah,0Fh              ; Tab: futtathatok / osszes fajl
+    cmp ah,0Fh              ; Tab: executables / all files
     jne .loop
     xor byte [showall],1
     jmp .rescan
@@ -244,7 +244,7 @@ beep:
     int 21h
     ret
 
-; ---------------------------------------------------------------- kepernyo
+; ---------------------------------------------------------------- screen
 restore_screen:
     cmp byte [hasmouse],0
     je .n
@@ -268,7 +268,7 @@ mouse_hide:
     int 33h
 .r: ret
 
-; ---------------------------------------------------------------- jatekok beolvasasa
+; ---------------------------------------------------------------- scanning games
 scan_games:
     mov di,pathbuf
     call put_colldir
@@ -308,11 +308,11 @@ scan_games:
 .done:
     ret
 
-; di = bejegyzes: cim es adatok a METADATA.INI-bol, ha nincs: cim a NAME.TXT-bol
+; di = entry: title and data from METADATA.INI, if missing: title from NAME.TXT
 read_game:
     mov ax,di
     sub ax,entries
-    mov cl,5                ; (eltolas / 64) * 2
+    mov cl,5                ; (offset / 64) * 2
     shr ax,cl
     add ax,gsegs
     mov [gslot],ax
@@ -339,7 +339,7 @@ read_game:
     jmp set_title
 .r: ret
 
-; di = bejegyzes, si = fajlnev ('\X.Y') -> ibuf (0-val lezarva), cx = hossz; CF=1 ha nincs
+; di = entry, si = filename ('\X.Y') -> ibuf (null-terminated), cx = length; CF=1 if missing
 open_read:
     push di
     mov bx,di
@@ -371,7 +371,7 @@ open_read:
     mov byte [ibuf+bx],0
 .r: ret
 
-skip_bom:                   ; si = szoveg, cx = hossz: UTF-8 BOM atugrasa
+skip_bom:                   ; si = text, cx = length: skip UTF-8 BOM
     cmp byte [si],0EFh
     jne .r
     cmp byte [si+1],0BBh
@@ -382,8 +382,8 @@ skip_bom:                   ; si = szoveg, cx = hossz: UTF-8 BOM atugrasa
     sub cx,3
 .r: ret
 
-; di = bejegyzes, si = szoveg, cx = hossz: az elso sor lesz a cim (max 50 karakter,
-; vezeto/zaro szokozok nelkul); ha ures, a cim a mappanev marad
+; di = entry, si = text, cx = length: the first line becomes the title (max 50 chars,
+; without leading/trailing spaces); if empty, the title remains the folder name
 set_title:
     lea bx,[di+13]
     xor dx,dx
@@ -399,7 +399,7 @@ set_title:
 .notab:
     cmp al,' '
     jne .store
-    test dx,dx              ; vezeto szokozok kihagyasa
+    test dx,dx              ; skip leading spaces
     jz .cp
 .store:
     cmp dx,L_NAME
@@ -420,7 +420,7 @@ set_title:
     mov byte [bx],0
     ret
 
-default_title:              ; di = bejegyzes
+default_title:              ; di = entry
     push di
     mov si,di
     add di,13
@@ -429,8 +429,8 @@ default_title:              ; di = bejegyzes
     ret
 
 ; ---------------------------------------------------------------- METADATA.INI
-; ibuf -> kv_off/kv_len (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION); hiany: hossz 0
-; "KULCS = ertek" sorok, kis/nagybetu mindegy; ';' '#' '[' kezdetu sorok kimaradnak
+; ibuf -> kv_off/kv_len (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION); missing: length 0
+; "KEY = value" lines, case insensitive; lines starting with ';' '#' '[' are skipped
 parse_ini:
     push di
     xor ax,ax
@@ -457,11 +457,11 @@ parse_ini:
     je .skipl
     cmp al,'['
     je .skipl
-    mov bx,si               ; kulcs eleje
+    mov bx,si               ; start of key
 .key:
     mov al,[si]
     call is_eol
-    je .line                ; nincs '=' a sorban
+    je .line                ; no '=' in the line
     cmp al,'='
     je .gotkey
     inc si
@@ -470,10 +470,10 @@ parse_ini:
     mov di,si
     call trim_back
     call find_key
-    mov dx,ax               ; dx = kulcs index vagy -1
+    mov dx,ax               ; dx = key index or -1
     inc si
     call skip_blank
-    mov bx,si               ; ertek eleje
+    mov bx,si               ; start of value
 .val:
     mov al,[si]
     call is_eol
@@ -485,7 +485,7 @@ parse_ini:
     call trim_back
     mov cx,di
     sub cx,bx
-    cmp cx,2                ; "idezojelek" levagasa
+    cmp cx,2                ; strip surrounding "quotes"
     jb .store
     cmp byte [bx],'"'
     jne .store
@@ -511,7 +511,7 @@ parse_ini:
     pop di
     ret
 
-is_eol:                     ; al -> ZF=1 ha sorvege (0, CR, LF, EOF)
+is_eol:                     ; al -> ZF=1 if end of line (0, CR, LF, EOF)
     test al,al
     je .r
     cmp al,13
@@ -530,7 +530,7 @@ skip_blank:
     jmp skip_blank
 .r: ret
 
-trim_back:                  ; bx = kezdet, di = veg -> di a zaro szokozok elott
+trim_back:                  ; bx = start, di = end -> di before trailing spaces
     cmp di,bx
     je .r
     cmp byte [di-1],' '
@@ -541,7 +541,7 @@ trim_back:                  ; bx = kezdet, di = veg -> di a zaro szokozok elott
     jmp trim_back
 .r: ret
 
-find_key:                   ; bx..di = kulcs -> ax = index a key_tab-ban, vagy -1
+find_key:                   ; bx..di = key -> ax = index in key_tab, or -1
     push si
     push dx
     mov si,key_tab
@@ -578,9 +578,9 @@ find_key:                   ; bx..di = kulcs -> ax = index a key_tab-ban, vagy -
     pop si
     ret
 
-; GENRE..DESCRIPTION -> uj tavoli rekord, szegmense a [gslot]-ba
+; GENRE..DESCRIPTION -> new far record, its segment stored in [gslot]
 store_record:
-    xor bx,bx               ; hosszak levagasa
+    xor bx,bx               ; clip lengths
 .clip:
     mov ax,[kv_len+bx]
     cmp ax,[kv_lim+bx]
@@ -596,16 +596,16 @@ store_record:
     add ax,[kv_len+6]
     add ax,[kv_len+8]
     test ax,ax
-    jz .r                   ; nincs mas adat a NAME-en kivul
+    jz .r                   ; no data other than NAME
     add ax,4+15
     mov cl,4
-    shr ax,cl               ; bekezdesek
+    shr ax,cl               ; paragraphs
     mov dx,[heapseg]
     mov cx,dx
     add cx,ax
     jc .r
     cmp cx,[memtop]
-    ja .r                   ; nincs eleg memoria: adatok nelkul
+    ja .r                   ; not enough memory: skip data
     mov [heapseg],cx
     mov bx,[gslot]
     mov [bx],dx
@@ -631,8 +631,8 @@ store_record:
     pop es
 .r: ret
 
-; si = bejegyzes, bl = mezo (F_*) -> si = fldbuf (a mezo erteke, ures ha nincs)
-; minden mas regisztert megtart
+; si = entry, bl = field (F_*) -> si = fldbuf (field value, empty if none)
+; preserves all other registers
 get_field:
     push ax
     push bx
@@ -679,7 +679,7 @@ get_field:
     mov si,fldbuf
     ret
 
-; ---------------------------------------------------------------- fajlok beolvasasa
+; ---------------------------------------------------------------- scanning files
 scan_files:
     mov word [fcount],0
     mov di,pathbuf
@@ -725,7 +725,7 @@ scan_files:
     call sort_ptrs
     ret
 
-; si = fajlnev; ZF=1 ha .COM / .EXE / .BAT
+; si = filename; ZF=1 if .COM / .EXE / .BAT
 is_exec:
 .f: lodsb
     test al,al
@@ -761,7 +761,7 @@ is_exec:
     or al,1
     ret
 
-build_file_header:          ; fejlec: "Cim  (MAPPA)", dirbuf: teljes mappa utvonal
+build_file_header:          ; header: "Title  (FOLDER)", dirbuf: full folder path
     mov di,hdrbuf
     mov si,[curgame]
     push si
@@ -778,7 +778,7 @@ build_file_header:          ; fejlec: "Cim  (MAPPA)", dirbuf: teljes mappa utvon
     mov si,[curgame]
     jmp strcpy
 
-build_game_header:          ; fejlec: "Games  (\COLLECT)" + aktiv szurok
+build_game_header:          ; header: "Games  (\COLLECT)" + active filters
     mov di,hdrbuf
     mov si,hdr_games
     call strcpy
@@ -798,9 +798,9 @@ build_game_header:          ; fejlec: "Games  (\COLLECT)" + aktiv szurok
     call strcpy
 .r: ret
 
-; ---------------------------------------------------------------- lista UI
-; be: lcount, lptrs, lsel, ltop, lrow0, lrows, listmode, lheader
-; ki: [lact] = 0: kivalasztva (ax = index), 1: Esc, 2: egyeb billentyu (ax = kod)
+; ---------------------------------------------------------------- list UI
+; in: lcount, lptrs, lsel, ltop, lrow0, lrows, listmode, lheader
+; out: [lact] = 0: selected (ax = index), 1: Esc, 2: other key (ax = code)
 run_list:
     call clamp_sel
 .redraw:
@@ -820,7 +820,7 @@ run_list:
     cmp al,' '
     jbe .key
     cmp byte [listmode],0
-    je .key                 ; jateklista: kereses (a hivo kezeli)
+    je .key                 ; game list: search (handled by caller)
     call jump_letter
     jmp .moved
 .ext:
@@ -888,7 +888,7 @@ run_list:
     jae .wait
     cmp byte [listmode],1
     jne .mok
-    cmp word [mcol],FCOL-1  ; reszletes nezet: csak a jobb oldali lista
+    cmp word [mcol],FCOL-1  ; detail view: only the right-side list
     jb .wait
 .mok:
     add ax,[ltop]
@@ -933,8 +933,8 @@ fix_top:
     mov [ltop],ax
 .r: ret
 
-; ---------------------------------------------------------------- kereses es szurok
-filter_add:                 ; al = karakter
+; ---------------------------------------------------------------- search and filters
+filter_add:                 ; al = character
     mov bl,[flen]
     cmp bl,30
     jae filter_ret
@@ -954,7 +954,7 @@ filter_back:
     mov byte [fbuf+bx],0
     jmp refilter
 
-filters_active:             ; ZF=1 ha nincs aktiv szuro
+filters_active:             ; ZF=1 if no active filters
     mov al,[fgenre]
     or al,[fyear]
     or al,[fplayers]
@@ -971,7 +971,7 @@ filter_clear:
     mov byte [fbuf],0
     ; fallthrough
 
-; szures ujra, a kijelolt jatek megtartasaval ha meg latszik (gsel, gtop)
+; re-filter, keeping the selected game if still visible (gsel, gtop)
 refilter:
     xor si,si
     cmp word [vcount],0
@@ -983,7 +983,7 @@ refilter:
     call apply_filter
     mov word [gsel],0
     call find_keep
-    mov ax,[gsel]           ; kijeloles kozepre
+    mov ax,[gsel]           ; center the selection
     sub ax,GROWS/2
     jns .t
     xor ax,ax
@@ -991,7 +991,7 @@ refilter:
 filter_ret:
     ret
 
-; vptrs-ben keresi a [keep] bejegyzest -> gsel
+; searches for the [keep] entry in vptrs -> gsel
 find_keep:
     xor bx,bx
 .f: cmp bx,[vcount]
@@ -1007,7 +1007,7 @@ find_keep:
     mov [gsel],bx
 .r: ret
 
-; gptrs -> vptrs a szurok es a kereses szerint
+; gptrs -> vptrs according to filters and search
 apply_filter:
     xor dx,dx
     xor bx,bx
@@ -1033,8 +1033,8 @@ apply_filter:
     mov [vcount],dx
     ret
 
-; si = bejegyzes -> ZF=1 ha illeszkedik (si megmarad)
-; szurok: GENRE / YEAR / PLAYERS pontos egyezes; kereses: cim, mappanev vagy leiras
+; si = entry -> ZF=1 if it matches (si preserved)
+; filters: GENRE / YEAR / PLAYERS exact match; search: title, folder name or description
 matches:
     push si
     mov bl,F_GENRE
@@ -1066,7 +1066,7 @@ matches:
 .r: pop si
     ret
 
-match_field:                ; si = bejegyzes, bl = mezo, di = szuro -> ZF=1 ha ures szuro vagy egyezik
+match_field:                ; si = entry, bl = field, di = filter -> ZF=1 if empty filter or matches
     cmp byte [di],0
     je .r
     push si
@@ -1076,7 +1076,7 @@ match_field:                ; si = bejegyzes, bl = mezo, di = szuro -> ZF=1 ha u
     test ax,ax
 .r: ret
 
-instr:                      ; si = szoveg, fbuf benne van-e (kis/nagybetu mindegy) -> ZF
+instr:                      ; si = text, whether fbuf is contained (case insensitive) -> ZF
     push bx
 .s: cmp byte [si],0
     je .nf
@@ -1107,8 +1107,8 @@ instr:                      ; si = szoveg, fbuf benne van-e (kis/nagybetu mindeg
     test al,al
     ret
 
-; szuro valasztasa a meglevo ertekekbol
-; bl = mezo, di = szuro valtozo, dx = cim
+; pick a filter from existing values
+; bl = field, di = filter variable, dx = title
 pick_filter:
     mov [pfield],bl
     mov [pdest],di
@@ -1126,7 +1126,7 @@ pick_filter:
     call get_field
     cmp byte [si],0
     je .next
-    mov dx,1                ; szerepel mar?
+    mov dx,1                ; already exists?
 .chk:
     cmp dx,[pcount]
     jae .add
@@ -1161,7 +1161,7 @@ pick_filter:
     dec cx
     xor dx,dx
     call sort_ptrs
-    mov word [lsel],0       ; az aktualis ertek kijelolese
+    mov word [lsel],0       ; select the current value
     mov si,[pdest]
     cmp byte [si],0
     je .run
@@ -1205,7 +1205,7 @@ pick_filter:
     jmp refilter
 .r: ret
 
-; billentyu: ax = kod; egerkattintas bal: ax=FF01h, [mrow]/[mcol]; jobb: Esc
+; key: ax = code; left mouse click: ax=FF01h, [mrow]/[mcol]; right: Esc
 get_input:
 %ifdef TEST
     mov si,[tkp]
@@ -1214,7 +1214,7 @@ get_input:
     jz .tend
     mov [tkp],si
     ret
-.tend:                      ; teszt vege: kepernyo mentese, kilepes
+.tend:                      ; end of test: save screen, exit
     mov ah,3Ch
     xor cx,cx
     mov dx,f_screen
@@ -1265,14 +1265,14 @@ get_input:
     mov ax,0FF01h
     ret
 
-; bx = index -> si = elem mutato
+; bx = index -> si = item pointer
 get_item:
     shl bx,1
     add bx,[lptrs]
     mov si,[bx]
     ret
 
-; al = karakter: ugras a kovetkezo ezzel kezdodo elemre
+; al = character: jump to the next item starting with this letter
 jump_letter:
     call upcase
     mov [jch],al
@@ -1294,8 +1294,8 @@ jump_letter:
     mov [lsel],dx
     ret
 
-; ---------------------------------------------------------------- rajzolas
-; fill_to-val a sor adott oszlopaig, majd szoveg (si) max hosszal; ah = szin, bp = sor eleje
+; ---------------------------------------------------------------- drawing
+; fill_to up to a given column, then text (si) with max length; ah = color, bp = row start
 %macro COLSTR 2
     lea bx,[bp+(%1)*2]
     call fill_to
@@ -1346,7 +1346,7 @@ draw_list:
     call mouse_show
     ret
 
-; jateklista tablazat: Title / Genre / Year / Folder
+; game list table: Title / Genre / Year / Folder
 draw_games:
     mov di,160
     mov bp,di
@@ -1419,13 +1419,13 @@ draw_games:
     call put_at
 .r: ret
 
-row_attr:                   ; ah = oszlop szine, kijelolt sorban a kijeloles szine
+row_attr:                   ; ah = column color, selected row uses selection color
     cmp byte [rattr],30h
     jne .r
     mov ah,30h
 .r: ret
 
-; reszletes nezet: bal oldalt az adatok, jobb oldalt a fajllista
+; detail view: data on the left, file list on the right
 draw_detail:
     mov ah,13h
     mov dx,0100h
@@ -1463,7 +1463,7 @@ draw_detail:
     mov cx,LBOXR-14
     mov ah,1Fh
     call put_at
-    mov si,[curgame]        ; leiras, sortoressel
+    mov si,[curgame]        ; description, with line wrapping
     mov bl,F_DESC
     call get_field
     mov ah,17h
@@ -1475,7 +1475,7 @@ draw_detail:
     mov dx,0903h
     mov cx,(14 << 8) | (LBOXR-4)
     call wrap_text
-    mov ah,13h              ; jobb doboz: fajlok
+    mov ah,13h              ; right box: files
     mov dx,0100h+LBOXR+1
     mov cx,1700h+79
     call draw_box
@@ -1534,7 +1534,7 @@ draw_detail:
     je .mk
     mov byte [rexec],0
 .mk:
-    mov ax,1A20h            ; osszes fajl nezetben jel a futtathatok elott
+    mov ax,1A20h            ; marker before executables in all-files view
     cmp byte [showall],0
     je .m
     cmp byte [rexec],0
@@ -1557,7 +1557,7 @@ draw_detail:
     jb .row
     ret
 
-info_line:                  ; dh = sor, bl = mezo, si = cimke
+info_line:                  ; dh = row, bl = field, si = label
     mov dl,3
     mov cx,10
     mov ah,1Bh
@@ -1573,7 +1573,7 @@ info_line:                  ; dh = sor, bl = mezo, si = cimke
     mov cx,LBOXR-14
     jmp put_at
 
-; szuro valaszto: kozepen egy doboz az ertekekkel
+; filter picker: a centered box with the values
 draw_picker:
     mov di,160
     mov ax,1720h
@@ -1635,7 +1635,7 @@ draw_footer:
     mov si,footer_g
     cmp byte [flen],0
     je .ft
-    mov ah,1Eh              ; kereses sor
+    mov ah,1Eh              ; search line
     mov si,str_search
     mov cx,20
     call put_str
@@ -1656,7 +1656,7 @@ draw_footer:
     mov bx,4000
     jmp fill_to
 
-put_footer:                 ; si = szoveg, '~' valt a kiemelt szinre; ki: ah = 70h
+put_footer:                 ; si = text, '~' toggles highlight color; out: ah = 70h
     mov ah,70h
 .l: lodsb
     test al,al
@@ -1672,7 +1672,7 @@ put_footer:                 ; si = szoveg, '~' valt a kiemelt szinre; ki: ah = 7
 .r: mov ah,70h
     ret
 
-; dh = sor, dl = oszlop -> di = kepernyo eltolas
+; dh = row, dl = column -> di = screen offset
 scr_at:
     push ax
     mov al,160
@@ -1685,11 +1685,11 @@ scr_at:
     pop ax
     ret
 
-put_at:                     ; dh,dl = pozicio, si = szoveg, cx = max hossz, ah = szin
+put_at:                     ; dh,dl = position, si = text, cx = max length, ah = color
     call scr_at
     jmp put_str
 
-box_title:                  ; dh,dl = pozicio, si = szoveg, cx = max hossz, ah = szin
+box_title:                  ; dh,dl = position, si = text, cx = max length, ah = color
     call scr_at
     mov al,' '
     stosw
@@ -1698,7 +1698,7 @@ box_title:                  ; dh,dl = pozicio, si = szoveg, cx = max hossz, ah =
     stosw
     ret
 
-; dupla vonalas keret; dh,dl = bal felso sarok, ch,cl = jobb also sarok, ah = szin
+; double-line frame; dh,dl = top-left corner, ch,cl = bottom-right corner, ah = color
 draw_box:
     push dx
     push bp
@@ -1721,7 +1721,7 @@ draw_box:
     pop bp
     pop dx
     ret
-.line:                      ; al = bal szel, bh = kitoltes, bl = jobb szel
+.line:                      ; al = left edge, bh = fill, bl = right edge
     call scr_at
     stosw
     mov al,bh
@@ -1741,7 +1741,7 @@ box_width:                  ; bp = cl - dl - 1
     mov bp,bx
     ret
 
-hsep:                       ; elvalaszto vonal a kereten belul; dh = sor, dl..cl, ah = szin
+hsep:                       ; separator line inside the frame; dh = row, dl..cl, ah = color
     push bp
     call box_width
     mov al,0C7h
@@ -1750,8 +1750,8 @@ hsep:                       ; elvalaszto vonal a kereten belul; dh = sor, dl..cl
     pop bp
     ret
 
-; szoveg sortoressel; si = szoveg, dh,dl = pozicio, ch = sorok, cl = szelesseg, ah = szin
-; ha nem fer el, az utolso sor vegen "..."
+; text with word wrap; si = text, dh,dl = position, ch = rows, cl = width, ah = color
+; if it doesn't fit, the last row ends with "..."
 wrap_text:
     mov [wr_w],cl
     mov [wr_n],ch
@@ -1767,8 +1767,8 @@ wrap_text:
 .ns:
     cmp byte [si],0
     je .r
-    xor bx,bx               ; bx = pozicio a sorban
-    xor cx,cx               ; cx = utolso szokoz pozicioja (0 = nincs)
+    xor bx,bx               ; bx = position in line
+    xor cx,cx               ; cx = last space position (0 = none)
 .sc:
     mov al,[si+bx]
     test al,al
@@ -1784,14 +1784,14 @@ wrap_text:
 .over:
     cmp al,' '
     je .fit
-    jcxz .fit               ; nincs szokoz: kemeny toras
+    jcxz .fit               ; no space: hard break
     mov bx,cx
 .fit:
     cmp byte [wr_n],1
     jne .print
     cmp byte [si+bx],0
     je .print
-    mov cl,[wr_w]           ; utolso sor, de van meg szoveg
+    mov cl,[wr_w]           ; last row, but more text remains
     xor ch,ch
     sub cx,3
     mov byte [wr_ell],1
@@ -1820,7 +1820,7 @@ wrap_text:
     jmp .row
 .r: ret
 
-; si = szoveg, ah = szin, cx = max hossz, es:di = kepernyo
+; si = text, ah = color, cx = max length, es:di = screen
 put_str:
     jcxz .r
 .l: lodsb
@@ -1830,7 +1830,7 @@ put_str:
     loop .l
 .r: ret
 
-; kitoltes szokozzel eddig: bx (di cel)
+; fill with spaces up to: bx (di target)
 fill_to:
     mov al,' '
 .l: cmp di,bx
@@ -1855,8 +1855,8 @@ put_num:
     loop .o
     ret
 
-; ---------------------------------------------------------------- segedek
-strcpy:                     ; si -> di, di a lezaro 0-ra mutat
+; ---------------------------------------------------------------- helpers
+strcpy:                     ; si -> di, di points to the terminating 0
     lodsb
     stosb
     test al,al
@@ -1896,7 +1896,7 @@ stricmp:                    ; si vs di -> ax <0 / 0 / >0
     pop si
     ret
 
-; beszurasos rendezes: bx = mutatotomb, cx = darab, dx = kulcs offset
+; insertion sort: bx = pointer array, cx = count, dx = key offset
 sort_ptrs:
     mov [s_arr],bx
     mov [s_off],dx
@@ -1935,8 +1935,8 @@ sort_ptrs:
 .done:
     ret
 
-; ---------------------------------------------------------------- argumentumok
-; GMENUPRG.COM /B [/A] [konyvtar]   pl. /B \COLLECT  vagy  /B /A D:\GAMES
+; ---------------------------------------------------------------- arguments
+; GMENUPRG.COM /B [/A] [directory]   e.g. /B \COLLECT  or  /B /A D:\GAMES
 parse_args:
     mov byte [argb],0
     mov byte [arga],0
@@ -1985,7 +1985,7 @@ parse_args:
     mov byte [di],0
     jmp .next
 .done:
-    ; colldir osszeallitasa: [X:] + '\' + utvonal, zaro '\' nelkul
+    ; build colldir: [X:] + '\' + path, without trailing '\'
     mov ah,19h
     int 21h
     add al,'A'
@@ -1994,7 +1994,7 @@ parse_args:
     mov si,argbuf
     mov di,colldir
     cmp byte [si],0
-    je .r                   ; nincs megadva: marad az alapertelmezes
+    je .r                   ; not specified: keep the default
     cmp byte [si+1],':'
     jne .nodrv
     lodsb
@@ -2017,12 +2017,12 @@ parse_args:
     mov byte [di],0
     jmp .trim
 .r:
-    mov si,colldir          ; cd-hez az utvonal meghajto nelkul
+    mov si,colldir          ; path without drive letter for cd
     cmp byte [si+1],':'
     jne .c
     add si,2
 .c: mov [cdpath],si
-    mov di,hdr_games        ; fejlec: "Games  (konyvtar)"
+    mov di,hdr_games        ; header: "Games  (directory)"
     mov si,str_games
     call strcpy
     mov si,str_lpar
@@ -2040,7 +2040,7 @@ put_colldir:                ; di <- colldir + '\'
     mov byte [di],0
     ret
 
-strend:                     ; di -> a lezaro 0
+strend:                     ; di -> the terminating 0
     cmp byte [di],0
     je .r
     inc di
@@ -2048,14 +2048,14 @@ strend:                     ; di -> a lezaro 0
 .r: ret
 
 ; ---------------------------------------------------------------- MENURUN.BAT
-put_drive:                  ; al = meghajto betuje
+put_drive:                  ; al = drive letter
     stosb
     mov al,':'
     stosb
     mov si,crlf
     jmp strcpy
 
-write_runner:               ; si = fajlnev
+write_runner:               ; si = filename
     mov [runfile],si
     mov di,outbuf
     mov si,s_echo
@@ -2108,9 +2108,9 @@ write_runner:               ; si = fajlnev
     int 21h
 .r: ret
 
-; ---------------------------------------------------------------- utolso pozicio
-; GMENU.SEL: mappanev (13) + kereses hossza (1) + kereses (32)
-;            + szurok: genre (25), year (11), players (11) + osszes fajl kapcsolo (1)
+; ---------------------------------------------------------------- last position
+; GMENU.SEL: folder name (13) + search length (1) + search (32)
+;            + filters: genre (25), year (11), players (11) + all-files flag (1)
 SELSZ equ 13+1+32+(L_GENRE+1)+(L_YEAR+1)+(L_PLAYERS+1)+1
 
 load_sel:
@@ -2138,7 +2138,7 @@ load_sel:
     xor bh,bh
     mov byte [fbuf+bx],0
     call apply_filter
-    xor bx,bx               ; mappanev keresese a szurt listaban
+    xor bx,bx               ; search for folder name in the filtered list
 .f: cmp bx,[vcount]
     jae .r
     push bx
@@ -2182,7 +2182,7 @@ save_sel:
     int 21h
 .r: ret
 
-; ---------------------------------------------------------------- adatok
+; ---------------------------------------------------------------- data
 colldir     db '\COLLECT',0
             times 64 db 0
 str_starf   db '*.*',0
@@ -2242,7 +2242,7 @@ fcount   dw 0
 gsel     dw 0
 gtop     dw 0
 vcount   dw 0
-selname  times 13 db 0      ; selname..showall egymas utan (GMENU.SEL)
+selname  times 13 db 0      ; selname..showall consecutive (GMENU.SEL)
 flen     db 0
 fbuf     times 32 db 0
 fgenre   times L_GENRE+1 db 0
@@ -2311,8 +2311,8 @@ fldbuf  resb L_DESC+2
 gptrs   resw MAXG
 vptrs   resw MAXG
 gsegs   resw MAXG
-fptrs   resw MAXF           ; kozos terulet: fajllista / valaszto (pptrs)
-fnames  resb MAXF*FSZ       ; kozos terulet: fajlnevek / ibuf (beolvasas) / pool (valaszto)
+fptrs   resw MAXF           ; shared area: file list / picker (pptrs)
+fnames  resb MAXF*FSZ       ; shared area: filenames / ibuf (read buffer) / pool (picker)
 entries resb MAXG*ESZ
 bss_end:
 
