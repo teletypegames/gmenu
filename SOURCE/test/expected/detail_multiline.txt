@@ -1,0 +1,25 @@
+ Foxtrot  (FOXTROT)                                                 1/1
+╔═ Foxtrot ════════════════════════════════════════════╗╔═ Executables ════════╗
+║                                                      ║║ FOX.EXE              ║
+║  Genre     Adventure                                 ║║                      ║
+║  Year      1985                                      ║║                      ║
+║  Players   2                                         ║║                      ║
+║  Folder    \COLLECT\FOXTROT                          ║║                      ║
+║  Played    never                                     ║║                      ║
+╟──────────────────────────────────────────────────────╢║                      ║
+║  First paragraph.                                    ║║                      ║
+║  Second line, a backslash: \n.                       ║║                      ║
+║                                                      ║║                      ║
+║  Third, after a blank line, long enough to wrap      ║║                      ║
+║  around the width of the box.                        ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+╚══════════════════════════════════════════════════════╝╚══════════════════════╝
+ ↑↓ Move Enter Run Tab All files F1 Help F6 Fav Ctrl+PgUp/Dn Text Esc Back

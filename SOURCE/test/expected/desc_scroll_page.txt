@@ -1,0 +1,25 @@
+ Echo Base  (ECHO)                                                  1/1
+╔═ Echo Base ══════════════════════════════════════════╗╔═ Executables ════════╗
+║                                                      ║║ GO.BAT               ║
+║  Genre     Strategy                                  ║║                      ║
+║  Year      1988                                      ║║                      ║
+║  Players   1-4                                       ║║                      ║
+║  Folder    \COLLECT\ECHO                             ║║                      ║
+║  Played    never                                     ║║                      ║
+╟────────────────────────────────────────────────────↑─╢║                      ║
+║  word078 word079 word080 word081 word082 word083     ║║                      ║
+║  word084 word085 word086 word087 word088 word089     ║║                      ║
+║  word090 word091 word092 word093 word094 word095     ║║                      ║
+║  word096 word097 word098 word099 word100 word101     ║║                      ║
+║  word102 word103 word104 word105 word106 word107     ║║                      ║
+║  word108 word109 word110 word111 word112 word113     ║║                      ║
+║  word114 word115 word116 word117 word118 word119     ║║                      ║
+║  word120 word121 word122 word123 word124 word125     ║║                      ║
+║  word126 word127 word128 word129 word130 word131     ║║                      ║
+║  word132 word133 word134 word135 word136 word137     ║║                      ║
+║  word138 word139 word140 word141 word142 word143     ║║                      ║
+║  word144 word145 word146 word147 word148 word149     ║║                      ║
+║  word150 word151 word152 word153 word154 word155     ║║                      ║
+║  word156 word157 word158 word159 word160 word161     ║║                      ║
+╚════════════════════════════════════════════════════↓═╝╚══════════════════════╝
+ ↑↓ Move Enter Run Tab All files F1 Help F6 Fav Ctrl+PgUp/Dn Text Esc Back

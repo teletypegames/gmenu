@@ -1,0 +1,7 @@
+GMENURUN.BAT:
+@echo off
+C:
+cd \COLLECT\BRAVO
+call SETUP.BAT /q
+C:
+cd \

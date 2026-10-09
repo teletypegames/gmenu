@@ -1,0 +1,7 @@
+GMENURUN.BAT:
+@echo off
+C:
+cd \COLLECT\BRAVO
+bravo.exe -fast -nosound
+C:
+cd \

@@ -1,0 +1,7 @@
+GMENURUN.BAT:
+@echo off
+C:
+cd \COLLECT\ECHO
+call GO.BAT
+C:
+cd \

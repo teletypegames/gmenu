@@ -1,0 +1,25 @@
+ Charlie's Quest  (CHARLIE)                                         1/1
+╔═ Charlie's Quest ════════════════════════════════════╗╔═ Executables ════════╗
+║                                                      ║║ CHARLIE.EXE          ║
+║  Genre     -                                         ║║                      ║
+║  Year      -                                         ║║                      ║
+║  Players   -                                         ║║                      ║
+║  Folder    \COLLECT\CHARLIE                          ║║                      ║
+║  Played    never                                     ║║                      ║
+╟──────────────────────────────────────────────────────╢║                      ║
+║  No description.                                     ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+╚══════════════════════════════════════════════════════╝╚══════════════════════╝
+ ↑↓ Move Enter Run Tab All files F1 Help F6 Fav Ctrl+PgUp/Dn Text Esc Back

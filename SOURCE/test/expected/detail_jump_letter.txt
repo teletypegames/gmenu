@@ -1,0 +1,25 @@
+ Bravo Racing  (BRAVO)                                              3/5
+╔═ Bravo Racing ═══════════════════════════════════════╗╔═ All files ══════════╗
+║                                                      ║║►BRAVO.EXE            ║
+║  Genre     Racing                                    ║║►CUT.EXE              ║
+║  Year      1993                                      ║║ DATA.DAT             ║
+║  Players   1                                         ║║ METADATA.INI         ║
+║  Folder    \COLLECT\BRAVO                            ║║►SETUP.BAT            ║
+║  Played    never                                     ║║                      ║
+╟──────────────────────────────────────────────────────╢║                      ║
+║  A racing simulation.                                ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+╚══════════════════════════════════════════════════════╝╚══════════════════════╝
+ ↑↓ Move Enter Run Tab Executables F1 Help F6 Fav Ctrl+PgUp/Dn Text Esc Back

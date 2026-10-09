@@ -13,13 +13,19 @@ fav_index:
 ; si = entry -> ZF=0 if favorite (bx clobbered)
 is_fav:
     call fav_index
-    test byte [gflags+bx],1
+    push es
+    mov es,[auxseg]
+    test byte [es:bx+A_FLAGS],1
+    pop es
     ret
 
 ; si = entry: toggle favorite, save GMENU.FAV
 toggle_fav:
     call fav_index
-    xor byte [gflags+bx],1
+    push es
+    mov es,[auxseg]
+    xor byte [es:bx+A_FLAGS],1
+    pop es
     ; fallthrough
 
 ; GMENU.FAV: folder names of the favorites, one per line
@@ -27,6 +33,7 @@ save_favs:
     mov ah,3Ch
     xor cx,cx
     mov dx,f_fav
+    call prog_file
     int 21h
     jc .r
     mov [favh],ax
@@ -59,13 +66,10 @@ save_favs:
     int 21h
 .r: ret
 
-load_favs:
-    mov di,gflags
-    mov cx,MAXG
-    xor al,al
-    rep stosb
+load_favs:                  ; (the flags are cleared at startup)
     mov ax,3D00h
     mov dx,f_fav
+    call prog_file
     int 21h
     jc .r
     mov bx,ax
@@ -103,7 +107,10 @@ load_favs:
     call find_entry
     jc .nf
     call fav_index
-    or byte [gflags+bx],1
+    push es
+    mov es,[auxseg]
+    or byte [es:bx+A_FLAGS],1
+    pop es
 .nf:
     pop si
     pop ax

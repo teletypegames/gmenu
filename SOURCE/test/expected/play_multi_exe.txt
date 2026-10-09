@@ -1,0 +1,25 @@
+ DELTA  (DELTA)                                                     1/2
+╔═ DELTA ══════════════════════════════════════════════╗╔═ Executables ════════╗
+║                                                      ║║ D1.EXE               ║
+║  Genre     -                                         ║║ D2.COM               ║
+║  Year      -                                         ║║                      ║
+║  Players   -                                         ║║                      ║
+║  Folder    \COLLECT\DELTA                            ║║                      ║
+║  Played    never                                     ║║                      ║
+╟──────────────────────────────────────────────────────╢║                      ║
+║  No description.                                     ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+║                                                      ║║                      ║
+╚══════════════════════════════════════════════════════╝╚══════════════════════╝
+ ↑↓ Move Enter Run Tab All files F1 Help F6 Fav Ctrl+PgUp/Dn Text Esc Back

@@ -1,0 +1,7 @@
+GMENURUN.BAT:
+@echo off
+C:
+cd \COLLECT\CHARLIE
+CHARLIE.EXE
+C:
+cd \

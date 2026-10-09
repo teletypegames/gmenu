@@ -1,0 +1,25 @@
+ Filter by genre                                                    1/7
+                        ╔═ Filter by genre ════════════╗
+                        ║ (all)                        ║
+                        ║ Action                       ║
+                        ║ Adventure                    ║
+                        ║ Kaland - "idézet"            ║
+                        ║ Racing                       ║
+                        ║ Sports                       ║
+                        ║ Strategy                     ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ║                              ║
+                        ╚══════════════════════════════╝
+ ↑↓ Move  Enter Select  A-Z Jump  Esc Cancel

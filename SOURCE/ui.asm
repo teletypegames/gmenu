@@ -25,7 +25,8 @@ mouse_hide:
 
 ; ---------------------------------------------------------------- list UI
 ; in: lcount, lptrs, lsel, ltop, lrow0, lrows, listmode, lheader
-; out: [lact] = 0: selected (ax = index), 1: Esc, 2: other key (ax = code)
+; out: [lact] = 0: selected (ax = index), 1: Esc, 2: other key (ax = code;
+;      FF04h: double click in the game list)
 run_list:
     call clamp_sel
 .redraw:
@@ -55,6 +56,20 @@ run_list:
     jmp .moved
 .ext:
     mov bx,[lsel]
+    cmp byte [listmode],1   ; detail view: Shift+PgUp/PgDn scrolls the description
+    jne .ext2
+    cmp ah,49h
+    je .shift
+    cmp ah,51h
+    jne .ext2
+.shift:
+    push ax
+    mov ah,2
+    int 16h
+    test al,3
+    pop ax
+    jnz .key
+.ext2:
     cmp ah,48h
     je .up
     cmp ah,50h
@@ -85,10 +100,14 @@ run_list:
     jae .home               ; bottom: wrap to the first item
     jmp .setsel
 .wup:                       ; wheel: move without wrapping
+    call wheel_left
+    je .key
     sub bx,WSTEP
     jns .setsel
     jmp .home
 .wdn:
+    call wheel_left
+    je .key
     add bx,WSTEP
     cmp bx,[lcount]
     jb .setsel
@@ -133,6 +152,24 @@ run_list:
     add ax,[ltop]
     cmp ax,[lcount]
     jae .wait
+    cmp byte [listmode],0   ; game list: click selects, click on the selected game opens it,
+    jne .msel               ; double click plays (ax = FF04h to the caller)
+    cmp byte [mdbl],0
+    jne .mplay
+    cmp ax,[lsel]
+    jne .mpick
+    call wait_dbl
+    jz .enter
+    jmp .mplay2
+.mpick:
+    mov [lsel],ax
+    jmp .moved
+.mplay:
+    mov [lsel],ax
+.mplay2:
+    mov ax,0FF04h
+    jmp .key
+.msel:
     mov [lsel],ax
     call draw_list
 .enter:
@@ -144,6 +181,16 @@ run_list:
 .esc:
     mov byte [lact],1
     ret
+
+wheel_left:                 ; ZF=1 if the wheel turned over the detail view's left box
+    cmp byte [listmode],1
+    jne .r
+    cmp word [mcol],FCOL-1
+    jb .y
+    or byte [listmode],0    ; ZF=0 (listmode = 1)
+    ret
+.y: cmp al,al
+.r: ret
 
 clamp_sel:
     mov ax,[lsel]
@@ -173,7 +220,7 @@ fix_top:
 .r: ret
 
 ; ---------------------------------------------------------------- input
-; key: ax = code; left mouse click: ax=FF01h, [mrow]/[mcol]; right: Esc
+; key: ax = code; left mouse click: ax=FF01h, [mrow]/[mcol], [mdbl]; right: Esc
 ; wheel: ax=FF02h (up) / FF03h (down)
 get_input:
 %ifdef TEST
@@ -184,9 +231,11 @@ get_input:
     mov [tkp],si
     ret
 .tend:                      ; end of test: save screen, exit
+    call mouse_hide         ; the mouse cursor is not part of the screen
     mov ah,3Ch
     xor cx,cx
     mov dx,f_screen
+    call prog_file
     int 21h
     mov bx,ax
     push ds
@@ -202,6 +251,9 @@ get_input:
     mov ax,4C03h
     int 21h
 %endif
+.idle:
+    mov ax,1680h            ; nothing to do: give the time slice to a multitasker
+    int 2Fh
 .l: mov ah,1
     int 16h
     jz .nokey
@@ -210,10 +262,17 @@ get_input:
     ret
 .nokey:
     cmp byte [hasmouse],0
-    je .l
+    je .idle
     mov ax,3
     int 33h
     mov [mwheel],bh
+    push cx
+    mov cl,3
+    shr dx,cl
+    mov [mrow],dx
+    pop dx
+    shr dx,cl
+    mov [mcol],dx
     mov al,bl
     mov ah,[prevbtn]
     mov [prevbtn],al
@@ -224,10 +283,10 @@ get_input:
     test al,2
     jnz .right
     cmp byte [haswheel],0
-    je .l
+    je .idle
     mov al,[mwheel]
     test al,al
-    jz .l
+    jz .idle
     mov ax,0FF03h
     jns .wr
     dec ax
@@ -236,14 +295,57 @@ get_input:
 .right:
     mov ax,011Bh
     ret
-.left:
-    mov bx,cx
-    mov cl,3
-    shr dx,cl
-    mov [mrow],dx
-    shr bx,cl
-    mov [mcol],bx
+.left:                      ; double click: same row, within DBLT ticks
+    call ticks
+    mov bx,ax
+    sub ax,[lclick_t]
+    mov byte [mdbl],0
+    cmp ax,DBLT
+    jae .first
+    mov ax,[mrow]
+    cmp ax,[lclick_r]
+    jne .first
+    mov byte [mdbl],1
+    sub bx,DBLT             ; a third click starts a new pair
+.first:
+    mov [lclick_t],bx
+    mov ax,[mrow]
+    mov [lclick_r],ax
     mov ax,0FF01h
+    ret
+
+ticks:                      ; ax = BIOS timer ticks
+    push ds
+    mov ax,40h
+    mov ds,ax
+    mov ax,[6Ch]
+    pop ds
+    ret
+
+; after a click on the selected game: ZF=0 if a second click follows within DBLT ticks
+wait_dbl:
+    mov ax,5                ; clear the press counter
+    xor bx,bx
+    int 33h
+    call ticks
+    mov [wd_t],ax
+.l: mov ax,5
+    xor bx,bx
+    int 33h
+    test bx,bx
+    jnz .yes
+    call ticks
+    sub ax,[wd_t]
+    cmp ax,DBLT
+    jb .l
+    cmp al,al
+    ret
+.yes:
+    mov word [lclick_r],-1
+    mov ax,3
+    int 33h
+    mov [prevbtn],bl
+    or bh,1                 ; ZF=0
     ret
 
 ; bx = index -> si = item pointer
@@ -438,7 +540,7 @@ draw_detail:
     mov al,' '
     stosw
 .nf:
-    mov dx,0700h
+    mov dx,0800h
     mov cl,LBOXR
     mov ah,13h
     call hsep
@@ -464,6 +566,16 @@ draw_detail:
     mov cx,LBOXR-14
     mov ah,1Fh
     call put_at
+    mov dx,0703h
+    mov si,lbl_played
+    mov cx,10
+    mov ah,1Bh
+    call put_at
+    call played_str
+    mov dx,070Dh
+    mov cx,LBOXR-14
+    mov ah,1Fh
+    call put_at
     mov si,[curgame]        ; description, with line wrapping
     mov bl,F_DESC
     call get_field
@@ -474,8 +586,28 @@ draw_detail:
     mov ah,18h
 .desc:
     mov dx,0903h
-    mov cx,(14 << 8) | (LBOXR-4)
+    mov cx,(DROWS << 8) | (LBOXR-4)
+    push word [dscroll]
+    pop word [wr_skip]
     call wrap_text
+    mov ax,[wr_tot]
+    mov [dlines],ax
+    mov ax,13h << 8 | 18h   ; scroll marks on the frame: up arrow / down arrow
+    cmp word [dscroll],0
+    je .nup
+    mov dx,0800h+LBOXR-2
+    call scr_at
+    stosw
+.nup:
+    mov bx,[dlines]
+    sub bx,[dscroll]
+    cmp bx,DROWS
+    jbe .ndn
+    mov dx,1700h+LBOXR-2
+    call scr_at
+    mov al,19h
+    stosw
+.ndn:
     mov ah,13h              ; right box: files
     mov dx,0100h+LBOXR+1
     mov cx,1700h+79
@@ -537,10 +669,24 @@ draw_detail:
 .mk:
     mov ax,1A20h            ; marker before executables in all-files view
     cmp byte [showall],0
-    je .m
+    je .rf
     cmp byte [rexec],0
-    je .m
+    je .rf
     mov al,10h
+.rf:
+    push ax                 ; the RUN file: yellow marker
+    push di
+    mov di,si
+    push si
+    mov si,[curgame]
+    mov bl,F_RUN
+    call get_field
+    call tok_eq
+    pop si
+    pop di
+    pop ax
+    jne .m
+    mov ax,1E10h
 .m: call row_attr
     stosw
     mov ah,[rattr]
@@ -627,6 +773,48 @@ draw_picker:
     cmp word [rowi],PROWS
     jb .row
 .r: ret
+
+; F1: key reference in a box, closed by any key or click
+show_help:
+    call mouse_hide
+    push es
+    mov ax,0B800h
+    mov es,ax
+    mov ah,13h
+    mov dx,0105h
+    mov cx,174Ah
+    call draw_box
+    mov si,str_help
+    mov dx,0107h
+    mov cx,20
+    mov ah,1Eh
+    call box_title
+    mov si,help_txt
+    mov dx,0207h
+.l: cmp byte [si],0
+    je .w
+    mov al,[si]             ; '#' = section title
+    mov ah,1Fh
+    cmp al,'#'
+    jne .t
+    inc si
+    mov ah,1Eh
+.t: push dx
+    call scr_at
+    push si
+    mov cx,64
+    call put_str
+    pop si
+.n: lodsb                   ; to the next line
+    test al,al
+    jnz .n
+    pop dx
+    inc dh
+    jmp .l
+.w: pop es
+    call mouse_show
+    call get_input
+    ret
 
 draw_footer:
     mov di,24*160
@@ -761,19 +949,18 @@ hsep:                       ; separator line inside the frame; dh = row, dl..cl,
     ret
 
 ; text with word wrap; si = text, dh,dl = position, ch = rows, cl = width, ah = color
-; if it doesn't fit, the last row ends with "..."
+; 0Ah = line break; [wr_skip] = wrapped lines to skip (scrolling); out: [wr_tot] = all lines
 wrap_text:
     mov [wr_w],cl
-    mov [wr_n],ch
-    mov byte [wr_ell],0
-.row:
-    cmp byte [wr_n],0
-    je .r
-.sk:
+    mov cl,ch
+    xor ch,ch
+    mov [wr_rows],cx
+    mov word [wr_tot],0
+.line:
     cmp byte [si],' '
     jne .ns
     inc si
-    jmp .sk
+    jmp .line
 .ns:
     cmp byte [si],0
     je .r
@@ -783,6 +970,8 @@ wrap_text:
     mov al,[si+bx]
     test al,al
     jz .fit
+    cmp al,10               ; line break
+    je .fit
     cmp bl,[wr_w]
     jae .over
     cmp al,' '
@@ -794,22 +983,21 @@ wrap_text:
 .over:
     cmp al,' '
     je .fit
+    cmp al,10
+    je .fit
     jcxz .fit               ; no space: hard break
     mov bx,cx
 .fit:
-    cmp byte [wr_n],1
-    jne .print
-    cmp byte [si+bx],0
-    je .print
-    mov cl,[wr_w]           ; last row, but more text remains
-    xor ch,ch
-    sub cx,3
-    mov byte [wr_ell],1
-    cmp bx,cx
-    jbe .print
-    mov bx,cx
-.print:
+    mov cx,[wr_tot]         ; visible line: wr_skip <= wr_tot < wr_skip + rows
+    sub cx,[wr_skip]
+    jb .adv
+    cmp cx,[wr_rows]
+    jae .adv
+    push dx
+    add dh,cl
     call scr_at
+    pop dx
+    push si
     mov cx,bx
     jcxz .pe
 .pl:
@@ -817,17 +1005,14 @@ wrap_text:
     stosw
     loop .pl
 .pe:
-    cmp byte [wr_ell],0
-    je .nx
-    mov al,'.'
-    stosw
-    stosw
-    stosw
-    ret
-.nx:
-    inc dh
-    dec byte [wr_n]
-    jmp .row
+    pop si
+.adv:
+    add si,bx
+    inc word [wr_tot]
+    cmp byte [si],10
+    jne .line
+    inc si
+    jmp .line
 .r: ret
 
 ; si = text, ah = color, cx = max length, es:di = screen

@@ -36,10 +36,16 @@ game_loop:
     call clear_filters
     jmp game_loop
 .key:
+    cmp ax,0FF04h           ; double click: play
+    je .play
     test al,al
     jz .ext
     cmp al,0E0h
     je .ext
+    cmp al,10               ; Ctrl+Enter: play
+    je .play
+    cmp al,13h              ; Ctrl+S: setup
+    je .setup
     cmp al,8
     je .bksp
     cmp al,' '
@@ -50,6 +56,8 @@ game_loop:
     call filter_back
     jmp game_loop
 .ext:
+    cmp ah,3Bh              ; F1: help
+    je .help
     mov bl,F_GENRE
     mov di,fgenre
     mov dx,str_pgenre
@@ -71,6 +79,10 @@ game_loop:
     je .favonly
     cmp ah,42h              ; F8: recently played
     je .recent
+    cmp ah,43h              ; F9: sort order
+    je .sort
+    cmp ah,44h              ; F10: random game
+    je .random
     cmp ah,3Fh              ; F5: clear filters
     jne game_loop
     call clear_filters
@@ -78,12 +90,20 @@ game_loop:
 .pick:
     call pick_filter
     jmp game_loop
+.help:
+    call show_help
+    jmp game_loop
+.play:
+    call cur_game
+    jc game_loop
+    jmp play
+.setup:
+    call cur_game
+    jc game_loop
+    jmp setup
 .fav:
-    cmp word [vcount],0
-    je game_loop
-    mov bx,[gsel]
-    shl bx,1
-    mov si,[vptrs+bx]
+    call cur_game
+    jc game_loop
     call toggle_fav
     push word [gsel]        ; keep the position (the game may drop out of the list)
     call apply_filter
@@ -93,18 +113,67 @@ game_loop:
     xor byte [favonly],1
     call refilter
     jmp game_loop
+.sort:
+    mov al,[sortmode]
+    inc ax
+    cmp al,NSORT
+    jb .sset
+    xor al,al
+.sset:
+    mov [sortmode],al
+    call sort_games
+    call refilter
+    jmp game_loop
+.random:
+    call random_game
+    jmp game_loop
 .recent:
     call pick_recent
     jc game_loop
     jmp detail
 
+random_game:                ; selects a random game of the list (not the current one)
+    mov cx,[vcount]
+    cmp cx,1
+    jbe .r
+.again:
+    call ticks              ; LCG, stirred with the timer
+    mov bx,ax
+    mov ax,[rseed]
+    mov dx,25173
+    mul dx
+    add ax,13849
+    add ax,bx
+    mov [rseed],ax
+    mul cx                  ; dx = ax * vcount / 65536
+    cmp dx,[gsel]
+    je .again
+    mov [gsel],dx
+    sub dx,GROWS/2          ; center it
+    jns .t
+    xor dx,dx
+.t: mov [gtop],dx
+.r: ret
+
+cur_game:                   ; -> si = selected game entry; CF=1 if the list is empty
+    cmp word [vcount],0
+    stc
+    je .r
+    mov bx,[gsel]
+    shl bx,1
+    mov si,[vptrs+bx]
+    clc
+.r: ret
+
 ; ---------------------------------------------------------------- detail view
 detail:                     ; si = game entry
     mov [curgame],si
+    mov word [dscroll],0
     call build_file_header
 .rescan:
     call scan_files
-    mov word [fsel],0
+    call find_runfile       ; the RUN file is selected first
+    mov [fsel],ax
     mov word [ftop],0
 .loop:
     mov byte [listmode],1
@@ -136,17 +205,57 @@ detail:                     ; si = game entry
     call beep               ; not an executable file
     jmp .loop
 .run:
-    call write_runner
-    call add_recent
-    call save_sel
-    call restore_screen
-    mov ax,4C00h
-    int 21h
+    call file_cmd
+    jmp launch
 .key:
+    cmp ah,0Fh              ; Tab: executables / all files
+    je .tab
+    mov bx,-WSTEP           ; description scrolling: wheel over the left box,
+    cmp ax,0FF02h           ; Ctrl+PgUp/PgDn, Shift+PgUp/PgDn
+    je .scroll
+    mov bx,WSTEP
+    cmp ax,0FF03h
+    je .scroll
+    test al,al
+    jz .ext
+    cmp al,0E0h
+    jne .loop
+.ext:
     cmp ah,40h              ; F6: toggle favorite
     je .fav
-    cmp ah,0Fh              ; Tab: executables / all files
+    cmp ah,3Bh              ; F1: help
+    jne .nohelp
+    call show_help
+    jmp .loop
+.nohelp:
+    mov bx,-(DROWS-1)
+    cmp ah,84h
+    je .scroll
+    cmp ah,49h
+    je .scroll
+    mov bx,DROWS-1
+    cmp ah,76h
+    je .scroll
+    cmp ah,51h
     jne .loop
+.scroll:
+    add bx,[dscroll]        ; clamp to 0..dlines-DROWS
+    mov ax,[dlines]
+    sub ax,DROWS
+    jns .max
+    xor ax,ax
+.max:
+    cmp bx,ax
+    jle .min
+    mov bx,ax
+.min:
+    test bx,bx
+    jns .set
+    xor bx,bx
+.set:
+    mov [dscroll],bx
+    jmp .loop
+.tab:
     xor byte [showall],1
     jmp .rescan
 .fav:
@@ -197,7 +306,7 @@ scan_files:
 .done:
     mov bx,fptrs
     mov cx,[fcount]
-    xor dx,dx
+    mov dx,stricmp
     call sort_ptrs
     ret
 
@@ -272,6 +381,20 @@ build_game_header:          ; header: "Games  (\COLLECT)" + match count + active
     mov ax,[gcount]
     call num_str
 .fo:
+    mov cl,[sortmode]       ; sort order other than title
+    test cl,cl
+    jz .fv
+    mov si,str_hsort
+    call strcpy
+    mov si,sort_names
+.sn:
+    lodsb                   ; skip cl names
+    test al,al
+    jnz .sn
+    dec cl
+    jnz .sn
+    call strcpy
+.fv:
     cmp byte [favonly],0
     je .fl
     mov si,str_hfav

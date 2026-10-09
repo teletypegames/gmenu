@@ -1,6 +1,10 @@
 ; catalog.asm - game scanning, METADATA.INI parsing, field access
 
 scan_games:
+    call idx_open
+    call .scan
+    jmp idx_finish
+.scan:
     mov di,pathbuf
     call put_colldir
     mov si,str_starf
@@ -39,17 +43,40 @@ scan_games:
 .done:
     ret
 
-; di = entry: title and data from METADATA.INI, if missing: title from NAME.TXT
+; di = entry: title and data from GMENU.IDX if the files did not change, otherwise
+; from METADATA.INI, if missing: title from NAME.TXT
 read_game:
     mov ax,di
     sub ax,entries
     mov cl,5                ; (offset / 64) * 2
     shr ax,cl
-    add ax,gsegs
+    add ax,A_SEGS
     mov [gslot],ax
-    mov bx,ax
-    mov word [bx],0
+    mov byte [gsrc],0
     call default_title
+    mov si,str_metaini
+    mov bx,stamp
+    call file_stamp
+    push di
+    mov di,stamp+8
+    mov si,zeros
+    mov cx,4
+    rep movsw
+    pop di
+    call idx_lookup
+    jnc .keep
+    push es                 ; not cached: no record, default title
+    mov es,[auxseg]
+    mov bx,[gslot]
+    mov word [es:bx],0
+    pop es
+    mov byte [gsrc],0
+    call default_title
+    call parse_game
+.keep:
+    jmp keep_stamp
+
+parse_game:
     mov si,str_metaini
     call open_read
     jc .nametxt
@@ -62,6 +89,10 @@ read_game:
     mov si,[kv_off]
     jmp set_title
 .nametxt:
+    mov byte [gsrc],1       ; title from NAME.TXT (or the folder name)
+    mov si,str_nametxt
+    mov bx,stamp+8
+    call file_stamp
     mov si,str_nametxt
     call open_read
     jc .r
@@ -70,8 +101,7 @@ read_game:
     jmp set_title
 .r: ret
 
-; di = entry, si = filename ('\X.Y') -> ibuf (null-terminated), cx = length; CF=1 if missing
-open_read:
+game_path:                  ; di = entry, si = '\X.Y' -> pathbuf = game directory\folder\X.Y
     push di
     mov bx,di
     push si
@@ -82,6 +112,24 @@ open_read:
     pop si
     call strcpy
     pop di
+    ret
+
+alloc_far:                  ; ax = bytes -> dx = segment of a new far block; CF=1 if no memory
+    add ax,15
+    mov cl,4
+    shr ax,cl
+    mov dx,[heapseg]
+    mov cx,dx
+    add cx,ax
+    jc .r
+    cmp [memtop],cx
+    jb .r
+    mov [heapseg],cx
+.r: ret
+
+; di = entry, si = filename ('\X.Y') -> ibuf (null-terminated), cx = length; CF=1 if missing
+open_read:
+    call game_path
     mov ax,3D00h
     mov dx,pathbuf
     int 21h
@@ -100,7 +148,102 @@ open_read:
     jc .r
     mov bx,cx
     mov byte [ibuf+bx],0
+    call utf8_437
+    clc
 .r: ret
+
+; ibuf (null-terminated): UTF-8 -> code page 437 in place, cx = new length
+; bytes that do not form a valid UTF-8 sequence are kept (text already in CP437);
+; characters missing from CP437 become their base letter or '?', the BOM is dropped
+utf8_437:
+    push si
+    push di
+    mov si,ibuf
+    mov di,si
+.l: lodsb
+    test al,al
+    jz .end
+    cmp al,0C2h             ; lead byte of a 2..4 byte sequence?
+    jb .put
+    cmp al,0F4h
+    ja .put
+    mov ah,[si]
+    mov bl,ah
+    and bl,0C0h
+    cmp bl,80h              ; followed by a continuation byte?
+    jne .put
+    cmp al,0E0h
+    jae .three
+    mov dl,ah               ; 2 bytes: dx = (al & 1Fh) << 6 | (ah & 3Fh)
+    and dl,3Fh
+    xor dh,dh
+    and ax,1Fh
+    mov cl,6
+    shl ax,cl
+    or dx,ax
+    inc si
+    jmp .map
+.three:
+    cmp al,0F0h
+    jae .other
+    mov bl,[si+1]
+    mov bh,bl
+    and bh,0C0h
+    cmp bh,80h
+    jne .put
+    add si,2                ; 3 bytes: dx = (al & 0Fh) << 12 | (ah & 3Fh) << 6 | (bl & 3Fh)
+    mov cl,4
+    shl al,cl
+    mov dh,al
+    and ah,3Fh
+    mov dl,ah
+    shr ah,1
+    shr ah,1
+    or dh,ah
+    mov cl,6
+    shl dl,cl
+    and bl,3Fh
+    or dl,bl
+    cmp dx,0FEFFh           ; BOM
+    je .l
+.map:
+    mov al,dl
+    test dh,dh
+    jnz .pairs
+    cmp al,80h
+    jb .put
+    cmp al,0A0h
+    jb .q
+    mov bx,u2c_a0-0A0h      ; U+00A0..U+00FF: table
+    xlat
+    jmp .put
+.pairs:
+    mov bx,u2c_pairs
+.p: mov ax,[bx]
+    test ax,ax
+    jz .q
+    add bx,3
+    cmp ax,dx
+    jne .p
+    mov al,[bx-1]
+    jmp .put
+.other:                     ; 4 bytes (outside the BMP): '?'
+    inc si
+    mov al,[si]
+    and al,0C0h
+    cmp al,80h
+    je .other
+.q: mov al,'?'
+.put:
+    stosb
+    jmp .l
+.end:
+    mov [di],al
+    mov cx,di
+    sub cx,ibuf
+    pop di
+    pop si
+    ret
 
 skip_bom:                   ; si = text, cx = length: skip UTF-8 BOM
     cmp byte [si],0EFh
@@ -160,13 +303,13 @@ default_title:              ; di = entry
     ret
 
 ; ---------------------------------------------------------------- METADATA.INI
-; ibuf -> kv_off/kv_len (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION); missing: length 0
+; ibuf -> kv_off/kv_len (keys of key_tab); missing: length 0
 ; "KEY = value" lines, case insensitive; lines starting with ';' '#' '[' are skipped
 parse_ini:
     push di
     xor ax,ax
     mov di,kv_len
-    mov cx,5
+    mov cx,NKEYS
     rep stosw
     mov si,ibuf
     call skip_bom
@@ -227,6 +370,11 @@ parse_ini:
 .store:
     test dx,dx
     js .line
+    cmp dx,4                ; DESCRIPTION: collected in fldbuf
+    jne .kv
+    call desc_append
+    jmp .line
+.kv:
     mov di,dx
     shl di,1
     mov [kv_off+di],bx
@@ -240,6 +388,45 @@ parse_ini:
     jmp .skipl
 .done:
     pop di
+    ret
+
+; bx = value, cx = length -> appended to the description in fldbuf (kv_off/kv_len[4]);
+; "\n" = line break (0Ah), "\\" = backslash, each further DESCRIPTION= line starts a new line
+desc_append:
+    push si
+    mov si,bx
+    mov di,fldbuf
+    mov [kv_off+8],di
+    mov dx,[kv_len+8]
+    add di,dx
+    mov al,10
+    test dx,dx
+    jnz .put
+.c: jcxz .done
+    lodsb
+    dec cx
+    cmp al,'\'
+    jne .put
+    jcxz .put
+    mov ah,[si]
+    cmp ah,al               ; "\\" = a backslash
+    je .esc
+    or ah,20h
+    cmp ah,'n'
+    jne .put
+    mov al,10
+.esc:
+    inc si
+    dec cx
+.put:
+    cmp di,fldbuf+L_DESC
+    jae .done
+    stosb
+    jmp .c
+.done:
+    sub di,fldbuf
+    mov [kv_len+8],di
+    pop si
     ret
 
 is_eol:                     ; al -> ZF=1 if end of line (0, CR, LF, EOF)
@@ -309,7 +496,7 @@ find_key:                   ; bx..di = key -> ax = index in key_tab, or -1
     pop si
     ret
 
-; GENRE..DESCRIPTION -> new far record, its segment stored in [gslot]
+; GENRE..ARGS -> new far record, its segment stored in the aux segment at [gslot]
 store_record:
     xor bx,bx               ; clip lengths
 .clip:
@@ -320,27 +507,24 @@ store_record:
     mov [kv_len+bx],ax
 .cok:
     add bx,2
-    cmp bx,10
+    cmp bx,NKEYS*2
     jb .clip
-    mov ax,[kv_len+2]
-    add ax,[kv_len+4]
-    add ax,[kv_len+6]
-    add ax,[kv_len+8]
+    xor ax,ax
+    mov bx,2
+.sum:
+    add ax,[kv_len+bx]
+    add bx,2
+    cmp bx,NKEYS*2
+    jb .sum
     test ax,ax
     jz .r                   ; no data other than NAME
-    add ax,4+15
-    mov cl,4
-    shr ax,cl               ; paragraphs
-    mov dx,[heapseg]
-    mov cx,dx
-    add cx,ax
-    jc .r
-    cmp cx,[memtop]
-    ja .r                   ; not enough memory: skip data
-    mov [heapseg],cx
-    mov bx,[gslot]
-    mov [bx],dx
+    add ax,NKEYS-1
+    call alloc_far
+    jc .r                   ; not enough memory: skip data
     push es
+    mov es,[auxseg]
+    mov bx,[gslot]
+    mov [es:bx],dx
     mov es,dx
     xor di,di
     mov bx,2
@@ -357,7 +541,7 @@ store_record:
 .z: xor al,al
     stosb
     add bx,2
-    cmp bx,10
+    cmp bx,NKEYS*2
     jb .fld
     pop es
 .r: ret
@@ -376,7 +560,8 @@ get_field:
     mov cl,5
     shr ax,cl
     mov di,ax
-    mov ax,[gsegs+di]
+    mov es,[cs:auxseg]
+    mov ax,[es:di+A_SEGS]
     push cs
     pop es
     mov di,fldbuf

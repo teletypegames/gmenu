@@ -135,29 +135,99 @@ matches:
     call instr
     pop si
     je .r
-    mov bl,F_DESC
-    call get_field
-    call instr
+    call instr_desc
 .r: pop si
     ret
 
-match_field:                ; si = entry, bl = field, di = filter -> ZF=1 if empty filter or matches
+; si = entry, bl = field, di = filter -> ZF=1 if empty filter or matches (ax..dx clobbered)
+; YEAR: "1990s" matches 1990..1999; PLAYERS: a number matches "a", "a-b" and "a+" ranges
+match_field:
     cmp byte [di],0
     je .r
     push si
     call get_field
+    cmp bl,F_PLAYERS
+    je .pl
+    cmp bl,F_YEAR
+    jne .exact
+    call is_decade
+    jne .exact
+    mov ax,[si]             ; first three digits equal, the fourth is a digit
+    cmp ax,[di]
+    jne .done
+    mov al,[si+2]
+    cmp al,[di+2]
+    jne .done
+    mov al,[si+3]
+    sub al,'0'
+    cmp al,10
+    sbb al,al               ; digit: al = -1
+    inc al
+    jmp .done
+.pl:
+    mov si,di
+    call parse_num          ; ax = players in the filter
+    jc .exact
+    push ax
+    mov si,fldbuf
+    call parse_range        ; ax..dx = range in the field
+    pop cx
+    jc .exact
+    cmp cx,ax
+    jb .no
+    cmp cx,dx
+    ja .no
+    cmp al,al
+    jmp .done
+.no:
+    or cl,1                 ; cx >= 1 here: ZF=0
+    jmp .done
+.exact:
+    mov si,fldbuf
     call stricmp
-    pop si
     test ax,ax
+.done:
+    pop si
 .r: ret
 
-instr:                      ; si = text, whether fbuf is contained (case insensitive) -> ZF
+is_decade:                  ; di = filter -> ZF=1 if "NNN0s"
+    cmp byte [di+5],0
+    jne .r
+    mov al,[di+4]
+    or al,20h
+    cmp al,'s'
+.r: ret
+
+; si = entry -> ZF=1 if fbuf is in its description (searched in the far record, not copied)
+instr_desc:
+    call fav_index
+    shl bx,1
+    push es
+    mov es,[auxseg]
+    mov ax,[es:bx+A_SEGS]
+    pop es
+    test ax,ax
+    jz instr.nf0
+    push ds
+    mov ds,ax
+    xor si,si
+    mov cx,F_DESC           ; skip the fields before DESCRIPTION
+.sk:
+    lodsb
+    test al,al
+    jnz .sk
+    loop .sk
+    call instr
+    pop ds
+    ret
+
+instr:                      ; ds:si = text, whether fbuf is contained (case insensitive) -> ZF
     push bx
 .s: cmp byte [si],0
     je .nf
     mov di,si
     mov bx,fbuf
-.c: mov al,[bx]
+.c: mov al,[cs:bx]
     test al,al
     jz .found
     call upcase
@@ -178,6 +248,7 @@ instr:                      ; si = text, whether fbuf is contained (case insensi
     ret
 .nf:
     pop bx
+.nf0:
     mov al,1
     test al,al
     ret
@@ -191,6 +262,11 @@ pick_filter:
     mov word [pptrs],str_all
     mov word [pcount],1
     mov word [ppool],pool
+    cmp bl,F_PLAYERS
+    jne .collect
+    call collect_players
+    jmp .cur
+.collect:
     xor bx,bx
 .g: cmp bx,[gcount]
     jae .sort
@@ -214,18 +290,7 @@ pick_filter:
     inc dx
     jmp .chk
 .add:
-    cmp word [pcount],MAXP
-    jae .next
-    mov di,[ppool]
-    cmp di,pool+POOLSZ-L_GENRE-1
-    ja .next
-    mov bx,[pcount]
-    shl bx,1
-    mov [pptrs+bx],di
-    inc word [pcount]
-    call strcpy
-    inc di
-    mov [ppool],di
+    call pool_add
 .next:
     pop bx
     inc bx
@@ -234,8 +299,12 @@ pick_filter:
     mov bx,pptrs+2
     mov cx,[pcount]
     dec cx
-    xor dx,dx
+    mov dx,stricmp
     call sort_ptrs
+    cmp byte [pfield],F_YEAR
+    jne .cur
+    call add_decades
+.cur:
     mov word [lsel],0       ; select the current value
     mov si,[pdest]
     cmp byte [si],0
@@ -281,3 +350,139 @@ pick_filter:
 .set:
     jmp refilter
 .r: ret
+
+pool_add:                   ; si = string -> new picker item (skipped when full)
+    cmp word [pcount],MAXP
+    jae .r
+    mov di,[ppool]
+    cmp di,pool+POOLSZ-L_GENRE-1
+    ja .r
+    mov bx,[pcount]
+    shl bx,1
+    mov [pptrs+bx],di
+    inc word [pcount]
+    call strcpy
+    inc di
+    mov [ppool],di
+.r: ret
+
+; picker items for PLAYERS: every player count 1..MAXPL covered by a game's range
+collect_players:
+    mov di,pseen
+    mov cx,MAXPL+1
+    xor al,al
+    rep stosb
+    xor bx,bx
+.g: cmp bx,[gcount]
+    jae .emit
+    push bx
+    shl bx,1
+    mov si,[gptrs+bx]
+    mov bl,F_PLAYERS
+    call get_field
+    call parse_range
+    jc .n
+    cmp dx,-1               ; "a+": only a is listed
+    jne .cap
+    mov dx,ax
+.cap:
+    cmp dx,MAXPL
+    jbe .b
+    mov dx,MAXPL
+.b: cmp ax,dx
+    ja .n
+    mov bx,ax
+    mov byte [pseen+bx],1
+    inc ax
+    jmp .b
+.n: pop bx
+    inc bx
+    jmp .g
+.emit:
+    mov ax,1
+.e: mov bx,ax
+    cmp byte [pseen+bx],0
+    je .nx
+    push ax
+    mov di,outbuf
+    call num_str
+    mov si,outbuf
+    call pool_add
+    pop ax
+.nx:
+    inc ax
+    cmp ax,MAXPL
+    jbe .e
+    ret
+
+; YEAR picker: the years are in pptrs[1..pcount-1], sorted -> decades ("1990s") are
+; added and moved in front of the years
+add_decades:
+    mov ax,[pcount]
+    mov [pyears],ax
+    mov bx,1
+.l: cmp bx,[pyears]
+    jae .move
+    push bx
+    shl bx,1
+    mov si,[pptrs+bx]
+    call is_year4
+    jne .n
+    mov di,outbuf           ; "NNN0s"
+    movsw
+    movsb
+    mov ax,'0s'
+    stosw
+    mov byte [di],0
+    mov ax,[pcount]         ; the same decade as the previous one?
+    cmp ax,[pyears]
+    je .add
+    mov bx,ax
+    shl bx,1
+    mov di,[pptrs+bx-2]
+    mov si,outbuf
+    call stricmp
+    test ax,ax
+    jz .n
+.add:
+    mov si,outbuf
+    call pool_add
+.n: pop bx
+    inc bx
+    jmp .l
+.move:                      ; pptrs[j] -> pptrs[k], pptrs[k..j-1] one place up
+    mov dx,1                ; k
+    mov ax,[pyears]         ; j
+.m: cmp ax,[pcount]
+    jae .r
+    mov si,ax
+    shl si,1
+    add si,pptrs
+    mov bx,[si]
+    mov cx,ax
+    sub cx,dx
+    mov di,si
+    sub si,2
+    std
+    rep movsw
+    cld
+    mov [di],bx
+    inc dx
+    inc ax
+    jmp .m
+.r: ret
+
+is_year4:                   ; si = text -> ZF=1 if it starts with 4 digits
+    push si
+    mov cx,4
+.d: lodsb
+    sub al,'0'
+    cmp al,9
+    ja .no
+    loop .d
+    pop si
+    cmp al,al
+    ret
+.no:
+    pop si
+    ret

@@ -1,12 +1,20 @@
+%ifdef MAPFILE
+[map symbols MAPFILE]
+%endif
+%ifndef COLLECT
+%define COLLECT '\COLLECT'  ; default game directory (build.sh: gmenu.ini collect_dir)
+%endif
+
 ; GMENUPRG.COM - game menu for the \COLLECT folder (DOS / DOSBox)
 ; Build: nasm -f bin -o GMENUPRG.COM GMENU.ASM
 ; Launch: GMENU.BAT -> GMENUPRG.COM /B [/A] [game_directory]  (default: \COLLECT)
 ;         /A = all files are shown in the game's folder, not just executables
-; Exit code: 0 = \GMENU\MENURUN.BAT created (must be run), 1 = quit, 2 = error
+; Exit code: 0 = GMENURUN.BAT created next to the program (must be run), 1 = quit, 2 = error
+; The program's files (GMENURUN.BAT, GMENU.SEL/.FAV/.STA/.IDX) are in its own folder.
 ;
-; Per folder: METADATA.INI (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION), if missing: NAME.TXT
-; The GENRE/YEAR/PLAYERS/DESCRIPTION reside in a far (above 64 KB) segment:
-; per game a paragraph-aligned record: genre,0,year,0,players,0,desc,0
+; Per folder: METADATA.INI (NAME, GENRE, YEAR, PLAYERS, DESCRIPTION, RUN, SETUP, ARGS),
+; if missing: NAME.TXT. The fields after NAME reside in a far (above 64 KB) segment:
+; per game a paragraph-aligned record: genre,0,year,0,players,0,desc,0,run,0,setup,0,args,0
 
 bits 16
 org 100h
@@ -18,8 +26,11 @@ FSZ      equ 13             ; filename size (8.3 + 0)
 GROWS    equ 22             ; game list rows (2..23)
 FROWS    equ 21             ; file list rows in detail view (2..22)
 PROWS    equ 21             ; picker list rows (2..22)
+DROWS    equ 14             ; description rows in detail view (9..22)
 MAXP     equ 250            ; max values in the picker
 NREC     equ 10             ; recently played games
+MAXPL    equ 16             ; players filter: highest player count listed
+NSORT    equ 4              ; sort orders (F9): title, year, genre, most played
 WSTEP    equ 3              ; mouse wheel: items per notch
 POOLSZ   equ 6000
 IBUFSZ   equ 4096           ; METADATA.INI / NAME.TXT read buffer
@@ -28,11 +39,17 @@ F_GENRE   equ 0             ; field order in the far record
 F_YEAR    equ 1
 F_PLAYERS equ 2
 F_DESC    equ 3
+F_RUN     equ 4             ; RUN / SETUP: command line (file [arguments]), ARGS: for RUN
+F_SETUP   equ 5
+F_ARGS    equ 6
+NKEYS     equ 8             ; METADATA.INI keys: NAME + the far record fields
 L_NAME    equ 50            ; max field lengths
 L_GENRE   equ 24
 L_YEAR    equ 10
 L_PLAYERS equ 10
 L_DESC    equ 2000
+L_CMD     equ 60            ; RUN, SETUP, ARGS
+DBLT      equ 9             ; double click: max ticks (1/18.2 s) between the clicks
 
 C_TITLE  equ 1              ; game list columns
 W_TITLE  equ 44
@@ -50,8 +67,49 @@ FCOL     equ 57             ; file list first column (inside right box)
 %error "the fnames/fptrs area is too small for ibuf/pool/pptrs"
 %endif
 
+; Memory after the program's 64 KB segment: stack, per game arrays (aux), far records
+STACKSZ  equ 800h           ; stack size (bytes)
+A_SEGS   equ 0              ; aux segment: far record segment per game (word)
+A_FLAGS  equ A_SEGS+MAXG*2  ;   flags per game (byte): bit 0 = favorite, 1 = title not from METADATA.INI
+A_STAMP  equ A_FLAGS+MAXG   ;   file stamps per game (STSZ bytes, see cache.asm)
+A_PLAYS  equ A_STAMP+MAXG*16 ;  starts per game (word)
+A_LAST   equ A_PLAYS+MAXG*2 ;   date of the last start (word, DOS format)
+AUXSZ    equ A_LAST+MAXG*2
+
 start:
     cld
+    mov ax,cs
+    add ax,1000h
+    mov bx,[2]              ; PSP: top of the memory DOS gave us
+    mov [memtop],bx
+    sub bx,ax
+    jb .nomem
+    cmp bx,STACKSZ/16+(AUXSZ+15)/16+100h
+    jae .memok
+.nomem:
+    mov dx,msg_nomem
+    mov ah,9
+    int 21h
+    mov ax,4C02h
+    int 21h
+.memok:
+    cli                     ; own stack segment, so the BSS can fill the 64 KB
+    mov ss,ax
+    mov sp,STACKSZ
+    sti
+    add ax,STACKSZ/16
+    mov [auxseg],ax
+    mov es,ax               ; clear the aux arrays
+    xor di,di
+    mov cx,AUXSZ
+    xor al,al
+    rep stosb
+    push ds
+    pop es
+    mov ax,[auxseg]
+    add ax,(AUXSZ+15)/16    ; far records after the aux arrays
+    mov [heapseg],ax
+    call get_progdir
     call parse_args
     cmp byte [argb],0       ; can only be launched from GMENU.BAT (with /B switch)
     jne .argok
@@ -61,11 +119,6 @@ start:
     mov ax,4C02h
     int 21h
 .argok:
-    mov ax,cs               ; far records after the program's 64 KB
-    add ax,1000h
-    mov [heapseg],ax
-    mov ax,[2]              ; PSP: top of available memory
-    mov [memtop],ax
     mov ax,3
     int 10h
     mov ah,1
@@ -108,11 +161,8 @@ start:
     mov ax,4C02h
     int 21h
 .ok:
-    mov bx,gptrs
-    mov cx,[gcount]
-    mov dx,13
-    call sort_ptrs
     call load_favs
+    call load_stats
     call load_sel
     cmp byte [arga],0
     je .noa
@@ -135,8 +185,10 @@ beep:
 
 %include "browser.asm"
 %include "catalog.asm"
+%include "cache.asm"
 %include "filter.asm"
 %include "favorites.asm"
+%include "stats.asm"
 %include "ui.asm"
 %include "launcher.asm"
 %include "session.asm"

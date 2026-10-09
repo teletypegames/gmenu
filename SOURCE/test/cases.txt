@@ -1,0 +1,44 @@
+# name | keystrokes of run 1 ; run 2 ; ... | program arguments (default: /B \COLLECT)
+# Keys: names from run.py (Enter, Down, F2, CtrlEnter, ...), "text" types the letters,
+# numbers are BIOS key codes. Runs of one case share GMENU.SEL/.FAV/.STA/.IDX.
+# Game list order: Alpha, Arvizturo (GOLF), Bravo, Charlie, DELTA, Echo, Foxtrot, Hotel
+
+list                | 0
+list_wrap_up        | Up
+list_all_files_arg  | Down Down Enter | /B /A \COLLECT
+search_title        | "charl"
+search_description  | "secretword"
+search_folder       | "delta"
+search_none         | "zzzz"
+search_esc_clears   | "zzzz" Esc
+filter_genre_picker | F2
+filter_genre        | F2 Down Enter
+filter_year_picker  | F3
+filter_year_decade  | F3 Down Enter
+filter_players_pick | F4
+filter_players_3    | F4 Down Down Down Enter
+detail_run_marker   | Down Down Enter
+detail_name_txt     | Down Down Down Enter
+detail_no_metadata  | Down Down Down Down Enter
+detail_all_files    | Down Down Enter Tab
+detail_jump_letter  | Down Down Enter Tab "d"
+detail_utf8         | Down Enter
+detail_multiline    | Up Up Enter
+desc_scroll_page    | End Up Up Enter CtrlPgDn
+desc_scroll_end     | End Up Up Enter CtrlPgDn CtrlPgDn CtrlPgDn CtrlPgDn
+desc_scroll_wheel   | End Up Up Enter WheelDn
+play_run_args       | Down Down CtrlEnter
+play_setup          | Down Down CtrlS
+play_single_exe     | Down Down Down CtrlEnter
+play_multi_exe      | Down Down Down Down CtrlEnter
+run_from_detail     | Down Down Enter Down Enter
+run_bat_file        | End Up Up Enter Enter
+help                | F1
+sort_year           | F9
+sort_genre          | F9 F9
+sort_persists       | F9 F9 Esc ; 0
+favorites           | F6 Down Down F6 F7
+recent              | Down Down CtrlEnter ; Down Down Down CtrlEnter ; F8
+stats_played        | Down Down CtrlEnter ; Enter
+sort_most_played    | Down Down CtrlEnter ; Home CtrlEnter ; Home CtrlEnter ; F9 F9 F9
+cache_reused        | 0 ; Down Down Enter
