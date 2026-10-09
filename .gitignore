@@ -5,3 +5,4 @@ GMENU.FAV
 GMENU.STA
 GMENU.IDX
 SOURCE/test/expected/*.got
+dist/

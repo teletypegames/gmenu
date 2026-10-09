@@ -178,6 +178,15 @@ python3 SOURCE/test/run.py --update     # accept the current results as expected
 
 A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` runs the build and the tests in Woodpecker CI.
 
+## Releases
+
+Pushing a `vX.Y.Z` tag makes Woodpecker build and test the program, then publish a Gitea release with `RELEASE_NOTES.md` as its text and two files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install) and `GMENUPRG.COM` (to update an installed menu). The upload (`scripts/ci-upload.sh`) uses the `gitea_token` repository secret, or Woodpecker's forge credential when there is one.
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## Limitations
 
 - At most 600 game folders and 600 files per folder. The recent list keeps the last 10 games.
