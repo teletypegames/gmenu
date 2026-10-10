@@ -1,21 +1,5 @@
 ; helpers.asm - string utilities, sorting, argument parsing
 
-strcpy:                     ; si -> di, di points to the terminating 0
-    lodsb
-    stosb
-    test al,al
-    jnz strcpy
-    dec di
-    ret
-
-upcase:
-    cmp al,'a'
-    jb .r
-    cmp al,'z'
-    ja .r
-    sub al,32
-.r: ret
-
 stricmp:                    ; si vs di -> ax <0 / 0 / >0
     push si
     push di
@@ -257,70 +241,6 @@ parse_args:
     mov si,str_rpar
     jmp strcpy
 
-; folder of this program -> progdir: the path after the environment strings, up to
-; the last '\'; the current folder -> startdir
-get_progdir:
-    mov ah,47h
-    xor dl,dl
-    mov si,startdir
-    int 21h
-    jnc .env
-    mov byte [startdir],0
-.env:
-    mov di,progdir
-    mov bx,di               ; after the last '\'
-    push ds
-    mov ds,[2Ch]
-    xor si,si
-.e: lodsb                   ; skip the strings up to the empty one
-    test al,al
-    jnz .e
-    cmp byte [si],0
-    jne .e
-    inc si
-    lodsw                   ; strings after it (1: program path)
-    test ax,ax
-    jz .def
-.c: lodsb
-    stosb
-    test al,al
-    jz .end
-    cmp al,'\'
-    jne .n
-    mov bx,di
-.n: cmp di,progdir+80-14
-    jb .c
-.def:
-    pop ds
-    mov si,def_dir
-    mov di,progdir
-    jmp strcpy
-.end:
-    pop ds
-    cmp bx,progdir
-    je .def
-    mov byte [bx],0
-    ret
-
-prog_file:                  ; dx = file name -> dx = progdir + name (other registers kept)
-    push si
-    push di
-    push ax
-    push es
-    push ds
-    pop es
-    mov si,progdir
-    mov di,fpath
-    call strcpy
-    mov si,dx
-    call strcpy
-    mov dx,fpath
-    pop es
-    pop ax
-    pop di
-    pop si
-    ret
-
 put_colldir:                ; di <- colldir + '\'
     mov si,colldir
     call strcpy
@@ -328,13 +248,6 @@ put_colldir:                ; di <- colldir + '\'
     stosb
     mov byte [di],0
     ret
-
-strend:                     ; di -> the terminating 0
-    cmp byte [di],0
-    je .r
-    inc di
-    jmp strend
-.r: ret
 
 num_str:                    ; ax -> decimal digits at di, di points to the terminating 0
     mov bx,10

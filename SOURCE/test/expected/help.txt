@@ -1,25 +1,25 @@
  Games  (\COLLECT)                                                  1/8
- Titl╔═ Keys ═════════════════════════════════════════════════════════════╗
- Alph║ Game list                                                          ║
- Arví║   Typing         search in the titles, folders and descriptions    ║
- Brav║   Enter, click   open the game (files, description)                ║
- Char║   Ctrl+Enter,    play: the RUN= command of METADATA.INI, or the    ║
- DELT║   double click     only executable; otherwise open the game        ║
- Echo║   Ctrl+S         run the SETUP= command of METADATA.INI            ║
- Foxt║   F2 / F3 / F4   filter by genre / year / number of players        ║
- Hote║   F5 / Esc       clear the filters / the search, filters, quit     ║
-     ║   F6 / F7        mark favorite / show the favorites only           ║
-     ║   F8             recently played games                             ║
-     ║   F9             sort by title / year / genre / most played        ║
-     ║   F10            pick a random game                                ║
-     ║                                                                    ║
-     ║ Game page                                                          ║
-     ║   Enter, click   run the file (yellow ►: the RUN= file)            ║
-     ║   Tab            all files / executables only                      ║
-     ║   A-Z, 0-9       jump to the next file starting with it            ║
-     ║   F6             mark favorite                                     ║
-     ║   Ctrl+PgUp/PgDn scroll the description (also Shift+PgUp/PgDn      ║
-     ║                    and the mouse wheel over the left box)          ║
-     ║   Esc, ←         back to the game list                             ║
-     ╚════════════════════════════════════════════════════════════════════╝
- Type Search Ctrl+Enter Play F1 Help F2-4 Filter F6/7 Fav F9 Sort F10 Random
+ Tit╔═ Keys ═══════════════════════════════════════════════════════════════╗
+ Alp║  Game list ────────────────────────────────────────────────────────  ║
+ Arv║   Enter, click     open the game page                                ║
+ Bra║   Ctrl+Enter       play (or double click)                            ║
+ Cha║   Ctrl+S           run the setup                                     ║
+ DEL║   Ctrl+E           edit METADATA.INI                                 ║
+ Ech║   Typing           search                                            ║
+ Fox║   F2  F3  F4       filter: genre, year, players                      ║
+ Hot║   F5               clear the filters                                 ║
+    ║   F6  F7           favorite, favorites only                          ║
+    ║   Shift+F7         no METADATA.INI only                              ║
+    ║   F8               recently played                                   ║
+    ║   F9  F10          sort order, random game                           ║
+    ║   Esc              clear search, filters, quit                       ║
+    ║                                                                      ║
+    ║  Game page ────────────────────────────────────────────────────────  ║
+    ║   Enter, click     run the file                                      ║
+    ║   Tab              all files / executables                           ║
+    ║   A-Z  0-9         jump to a file                                    ║
+    ║   Ctrl+PgUp/Dn     scroll the description                            ║
+    ║   F6               favorite                                          ║
+    ║   Ctrl+E           edit METADATA.INI                                 ║
+    ╚══════════════════════════════════════════════════════════════════↓═══╝
+ ↑↓ PgUp PgDn Scroll  Esc Close

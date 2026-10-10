@@ -1,0 +1,8 @@
+(no SCREEN.BIN or GMENURUN.BAT)
+GOLF\METADATA.INI:
+﻿[GAME]
+NAME=Árvíztűrő tükörfúrógép
+GENRE=Kaland – “idézet”
+YEAR=1996
+PLAYERS=1-11
+DESCRIPTION=ÁÉÍÓÖŐÚÜŰ áéíóöőúüű Ça ñ ß ½ ° … 😀 end.

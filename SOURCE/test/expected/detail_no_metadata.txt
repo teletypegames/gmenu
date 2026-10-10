@@ -1,8 +1,8 @@
- DELTA  (DELTA)                                                     1/2
+ DELTA  (DELTA)                                                     1/3
 ╔═ DELTA ══════════════════════════════════════════════╗╔═ Executables ════════╗
 ║                                                      ║║ D1.EXE               ║
 ║  Genre     -                                         ║║ D2.COM               ║
-║  Year      -                                         ║║                      ║
+║  Year      -                                         ║║ INSTALL.BAT          ║
 ║  Players   -                                         ║║                      ║
 ║  Folder    \COLLECT\DELTA                            ║║                      ║
 ║  Played    never                                     ║║                      ║

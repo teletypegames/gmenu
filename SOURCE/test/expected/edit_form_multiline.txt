@@ -1,0 +1,25 @@
+ Edit METADATA.INI: \COLLECT\FOXTROT
+╔═ Game data ══════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║  Name         Foxtrot                                                        ║
+║  Genre        Adventure                                                      ║
+║  Year         1985                                                           ║
+║  Players      2                                                              ║
+║                                                                              ║
+║  Description                                                                 ║
+║  First paragraph.\nSecond line, a backslash: \\n.\n\nThird, after a blank l  ║
+║                                                                              ║
+║  Run                                                                         ║
+║  Args                                                                        ║
+║  Setup                                                                       ║
+║                                                                              ║
+╟─ Executables ────────────────────────────────────────────────────────────────╢
+║  FOX.EXE                                                                     ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+╟──────────────────────────────────────────────────────────────────────────────╢
+║  The title in the game list                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+ Tab/↑↓ Field  F2 Save  Esc Cancel  Ctrl+Y Clear

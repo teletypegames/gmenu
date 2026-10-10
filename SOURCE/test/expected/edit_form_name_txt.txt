@@ -1,0 +1,25 @@
+ New METADATA.INI: \COLLECT\CHARLIE
+╔═ Game data ══════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║  Name         Charlie's Quest                                                ║
+║  Genre                                                                       ║
+║  Year                                                                        ║
+║  Players                                                                     ║
+║                                                                              ║
+║  Description                                                                 ║
+║                                                                              ║
+║                                                                              ║
+║  Run          CHARLIE.EXE                                                    ║
+║  Args                                                                        ║
+║  Setup                                                                       ║
+║                                                                              ║
+╟─ Executables ────────────────────────────────────────────────────────────────╢
+║  CHARLIE.EXE                                                                 ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+╟──────────────────────────────────────────────────────────────────────────────╢
+║  The title in the game list                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+ Tab/↑↓ Field  F2 Save  Esc Cancel  Ctrl+Y Clear

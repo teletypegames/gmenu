@@ -1,0 +1,30 @@
+ Games  (\COLLECT)  Found: 1 of 8  No METADATA.INI                  1/1
+ Title                                        Genre           Year Folder
+ DELTA                                                             DELTA
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Type Search Ctrl+Enter Play F1 Help F2-4 Filter F6/7 Fav F9 Sort F10 Random
+CHARLIE\METADATA.INI:
+[GAME]
+NAME=Charlie's Quest
+GENRE=Puzzle
+RUN=CHARLIE.EXE

@@ -10,12 +10,14 @@ fav_index:
     pop cx
     ret
 
-; si = entry -> ZF=0 if favorite (bx clobbered)
+; si = entry -> ZF=0 if favorite (al, bx clobbered)
 is_fav:
+    mov al,1
+has_flag:                   ; si = entry, al = A_FLAGS bits -> ZF=0 if one is set (bx clobbered)
     call fav_index
     push es
     mov es,[auxseg]
-    test byte [es:bx+A_FLAGS],1
+    test [es:bx+A_FLAGS],al
     pop es
     ret
 

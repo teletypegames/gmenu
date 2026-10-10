@@ -4,7 +4,7 @@
 # (SDL dummy video and audio); the same tests also pass with DOSBox Staging.
 #
 # A tag (vX.Y.Z) also publishes a Gitea release: GMENU-<tag>.zip with the GMENU folder
-# to install, and GMENUPRG.COM alone, for updating an installed menu. The scripts work
+# to install, and GMENUPRG.COM and GMEDIT.COM alone, for updating an installed menu. The scripts work
 # on every tagged version, also on the ones from before the tests and SOURCE/ existed.
 when:
   - event: [push, manual]

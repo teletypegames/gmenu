@@ -1,0 +1,36 @@
+ Games  (\COLLECT)                                                  1/8
+ Title                                        Genre           Year Folder
+ Alpha Strike                                 Action          1991 ALPHA
+ Arvíztürö tükörfúrógép                       Kaland - "idéze 1995 GOLF
+ Bravo Racing                                 Arcade          1993 BRAVO
+ Charlie's Quest                                                   CHARLIE
+ DELTA                                                             DELTA
+ Echo Base                                    Strategy        1988 ECHO
+ Foxtrot                                      Adventure       1985 FOXTROT
+ Hotel Tennis                                 Sports          1990 HOTEL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Type Search Ctrl+Enter Play F1 Help F2-4 Filter F6/7 Fav F9 Sort F10 Random
+BRAVO\METADATA.INI:
+[GAME]
+; RUN, SETUP and ARGS
+NAME = Bravo Racing
+GENRE=Arcade
+YEAR=1993
+PLAYERS=1
+RUN=bravo.exe -fast
+ARGS=-nosound
+SETUP=SETUP.BAT /q
+DESCRIPTION=A racing simulation.

@@ -1,0 +1,8 @@
+(no SCREEN.BIN or GMENURUN.BAT)
+FOXTROT\METADATA.INI:
+[GAME]
+NAME="Foxtrot"
+GENRE=Adventure
+YEAR=1985
+DESCRIPTION=First paragraph.\nSecond line, a backslash: \\n.\n\nThird, after a blank line, long enough to wrap around the width of the box. More.
+PLAYERS=2

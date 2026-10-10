@@ -1,10 +1,13 @@
 #!/bin/sh
-# Builds GMENUPRG.COM from GMENU.ASM (requires NASM: brew install nasm)
-# Extra arguments are passed to nasm (e.g. -DTEST "-DTESTKEYS=...").
-# OUT=<file> overrides the output file (default: ../GMENUPRG.COM).
+# Builds GMENUPRG.COM from GMENU.ASM and GMEDIT.COM from GMEDIT.ASM (requires NASM:
+# brew install nasm). Extra arguments are passed to nasm (e.g. -DTEST "-DTESTKEYS=...").
+# OUT=<file> overrides the menu's output file (default: ../GMENUPRG.COM), EDOUT=<file>
+# the editor's (default: GMEDIT.COM next to the menu). ONLY=menu / ONLY=editor builds
+# just one of them (the tests use it).
 set -e
 cd "$(dirname "$0")"
 OUT=${OUT:-../GMENUPRG.COM}
+EDOUT=${EDOUT:-$(dirname "$OUT")/GMEDIT.COM}
 
 # gmenu.ini: collect_dir = default game directory (used when GMENU.BAT gives none)
 INI_FILE="../gmenu.ini"
@@ -22,6 +25,7 @@ if ! command -v nasm >/dev/null 2>&1; then
     exit 1
 fi
 
+if [ "$ONLY" != editor ]; then
 MAP=$(mktemp)
 trap 'rm -f "$MAP"' EXIT
 nasm -f bin "-DCOLLECT='$COLLECT_DIR'" "-DMAPFILE=$MAP" "$@" -o "$OUT" GMENU.ASM
@@ -38,3 +42,9 @@ if [ $((0x$BSS_END)) -gt $((0xFFF0)) ]; then
     exit 1
 fi
 echo "OK: $OUT ($(wc -c < "$OUT" | tr -d ' ') bytes, data end: $BSS_END)"
+fi
+
+if [ "$ONLY" != menu ]; then
+nasm -f bin "$@" -o "$EDOUT" GMEDIT.ASM
+echo "OK: $EDOUT ($(wc -c < "$EDOUT" | tr -d ' ') bytes)"
+fi

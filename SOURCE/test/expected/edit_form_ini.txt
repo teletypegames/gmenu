@@ -1,0 +1,25 @@
+ Edit METADATA.INI: \COLLECT\BRAVO
+╔═ Game data ══════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║  Name         Bravo Racing                                                   ║
+║  Genre        Racing                                                         ║
+║  Year         1993                                                           ║
+║  Players      1                                                              ║
+║                                                                              ║
+║  Description                                                                 ║
+║  A racing simulation.                                                        ║
+║                                                                              ║
+║  Run          bravo.exe -fast                                                ║
+║  Args         -nosound                                                       ║
+║  Setup        SETUP.BAT /q                                                   ║
+║                                                                              ║
+╟─ Executables ────────────────────────────────────────────────────────────────╢
+║  BRAVO.EXE     CUT.EXE       SETUP.BAT                                       ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+╟──────────────────────────────────────────────────────────────────────────────╢
+║  The title in the game list                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+ Tab/↑↓ Field  F2 Save  Esc Cancel  Ctrl+Y Clear

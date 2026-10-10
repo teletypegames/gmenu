@@ -34,6 +34,9 @@ play_multi_exe      | Down Down Down Down CtrlEnter
 run_from_detail     | Down Down Enter Down Enter
 run_bat_file        | End Up Up Enter Enter
 help                | F1
+help_scroll         | F1 PgDn
+help_scroll_back    | F1 End Up
+help_detail         | Down Down Enter F1
 sort_year           | F9
 sort_genre          | F9 F9
 sort_persists       | F9 F9 Esc ; 0
@@ -42,3 +45,26 @@ recent              | Down Down CtrlEnter ; Down Down Down CtrlEnter ; F8
 stats_played        | Down Down CtrlEnter ; Enter
 sort_most_played    | Down Down CtrlEnter ; Home CtrlEnter ; Home CtrlEnter ; F9 F9 F9
 cache_reused        | 0 ; Down Down Enter
+# GMEDIT: CHARLIE (NAME.TXT, one executable) and DELTA (two executables and INSTALL.BAT) have
+# no METADATA.INI; editing keeps the lines of the unchanged values
+filter_no_ini       | ShiftF7
+edit_runner         | ShiftF7 Down CtrlE
+edit_from_detail    | ShiftF7 Enter CtrlE
+edit_with_ini       | CtrlE
+edit_form_name_txt  | 0 | GMEDIT \COLLECT\CHARLIE
+edit_form_folder    | 0 | GMEDIT \COLLECT\DELTA
+edit_typing         | Down "Puzzle" Left Left Bksp Del Home "X" End "s" | GMEDIT \COLLECT\DELTA
+edit_field_wrap     | Up Up "x" ShiftTab "y" Tab Tab "z" | GMEDIT \COLLECT\DELTA
+edit_desc_scroll    | Down Down Down Down "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234" | GMEDIT \COLLECT\DELTA
+edit_save           | CtrlY "Delta " 0x82 "lan" Down "Puzzle" Down "1992" Down "1-2" Down "First line\nSecond" Down "D1.EXE -fast" Down "-nosound" F2 | GMEDIT \COLLECT\DELTA
+edit_cancel         | "zzz" Esc | GMEDIT \COLLECT\DELTA
+edit_form_ini       | 0 | GMEDIT \COLLECT\BRAVO
+edit_form_multiline | 0 | GMEDIT \COLLECT\FOXTROT
+edit_ini_change     | Down CtrlY "Arcade" F2 | GMEDIT \COLLECT\BRAVO
+edit_ini_clear      | Down Down Down Down Down Down CtrlY F2 | GMEDIT \COLLECT\BRAVO
+edit_ini_add        | Down Down Down Down Down Down "-x" F2 | GMEDIT \COLLECT\ALPHA
+edit_ini_desc       | Down Down Down Down End " More." F2 | GMEDIT \COLLECT\FOXTROT
+edit_ini_utf8_kept  | Down Down CtrlY "1996" F2 | GMEDIT \COLLECT\GOLF
+edit_ini_unchanged  | F2 | GMEDIT \COLLECT\FOXTROT
+edit_ini_then_menu  | Down CtrlY "Arcade" F2 ; 0 | GMEDIT \COLLECT\BRAVO ; /B \COLLECT
+edit_then_menu      | Down "Puzzle" F2 ; ShiftF7 | GMEDIT \COLLECT\CHARLIE ; /B \COLLECT

@@ -232,24 +232,7 @@ get_input:
     ret
 .tend:                      ; end of test: save screen, exit
     call mouse_hide         ; the mouse cursor is not part of the screen
-    mov ah,3Ch
-    xor cx,cx
-    mov dx,f_screen
-    call prog_file
-    int 21h
-    mov bx,ax
-    push ds
-    mov ax,0B800h
-    mov ds,ax
-    mov ah,40h
-    mov cx,4000
-    xor dx,dx
-    int 21h
-    pop ds
-    mov ah,3Eh
-    int 21h
-    mov ax,4C03h
-    int 21h
+    jmp test_screen
 %endif
 .idle:
     mov ax,1680h            ; nothing to do: give the time slice to a multitasker
@@ -774,46 +757,161 @@ draw_picker:
     jb .row
 .r: ret
 
-; F1: key reference in a box, closed by any key or click
+; F1: the keys in a table that scrolls (arrows, PgUp/PgDn, Home/End, the wheel);
+; any other key or a click closes it
 show_help:
+    mov word [htop],0
+.draw:
+    call draw_help
+    call get_input
+    mov dx,-WSTEP
+    cmp ax,0FF02h
+    je .move
+    mov dx,WSTEP
+    cmp ax,0FF03h
+    je .move
+    test al,al
+    jz .ext
+    cmp al,0E0h
+    jne .r
+.ext:
+    mov cl,ah
+    mov si,help_keys
+.k: lodsw                   ; al = scan code, ah = rows to move
+    test al,al
+    jz .r
+    cmp al,cl
+    jne .k
+    mov al,ah
+    cbw
+    xchg ax,dx
+.move:
+    add dx,[htop]           ; clamp to 0..hmax
+    cmp dx,[hmax]
+    jle .min
+    mov dx,[hmax]
+.min:
+    test dx,dx
+    jns .set
+    xor dx,dx
+.set:
+    mov [htop],dx
+    jmp .draw
+.r: ret
+
+; help_txt from row [htop]: section titles with a line, keys as caps, descriptions;
+; out: [hmax] = the last top row
+draw_help:
     call mouse_hide
     push es
     mov ax,0B800h
     mov es,ax
     mov ah,13h
-    mov dx,0105h
-    mov cx,174Ah
+    mov dx,0104h
+    mov cx,174Bh
     call draw_box
     mov si,str_help
-    mov dx,0107h
+    mov dx,0106h
     mov cx,20
     mov ah,1Eh
     call box_title
     mov si,help_txt
-    mov dx,0207h
-.l: cmp byte [si],0
-    je .w
-    mov al,[si]             ; '#' = section title
-    mov ah,1Fh
-    cmp al,'#'
-    jne .t
-    inc si
-    mov ah,1Eh
-.t: push dx
-    call scr_at
-    push si
-    mov cx,64
-    call put_str
-    pop si
-.n: lodsb                   ; to the next line
+    xor bp,bp               ; bp = row
+.row:
+    cmp byte [si],0FFh
+    je .end
+    mov ax,bp
+    sub ax,[htop]
+    jb .skip
+    cmp ax,HROWS
+    jae .skip
+    mov dh,al
+    add dh,2
+    mov al,[si]
     test al,al
-    jnz .n
-    pop dx
-    inc dh
-    jmp .l
-.w: pop es
-    call mouse_show
-    call get_input
+    jz .skip                ; empty row
+    cmp al,1
+    jne .entry
+    inc si                  ; section: yellow title, then a line to the frame
+    mov dl,7
+    call scr_at
+    mov ah,1Eh
+    mov cx,30
+    call put_str
+    mov al,' '
+    stosw
+    mov dl,73
+    mov bx,di
+    call scr_at
+    xchg bx,di
+    mov ax,13C4h
+.ln:
+    stosw
+    cmp di,bx
+    jb .ln
+    jmp .next
+.entry:
+    mov dl,7+HKW            ; key cap: black on cyan, KW wide
+    call scr_at
+    mov bx,di
+    mov dl,7
+    call scr_at
+    mov ax,3020h
+    stosw
+    mov cx,HKW-2
+    call put_str
+    call fill_to
+    add di,4
+    mov ah,1Fh
+    mov cx,44
+    call put_str
+    jmp .next
+.skip:                      ; past the row: empty, section title, or key and description
+    lodsb
+    test al,al
+    jz .next
+    cmp al,1
+    je .s1
+    call skipz
+.s1:
+    call skipz
+.next:
+    inc bp
+    jmp .row
+.end:
+    sub bp,HROWS
+    jns .max
+    xor bp,bp
+.max:
+    mov [hmax],bp
+    mov ax,13h << 8 | 18h   ; more above / below: arrows on the frame
+    cmp word [htop],0
+    je .nup
+    mov dx,0100h+71
+    call scr_at
+    stosw
+.nup:
+    cmp bp,[htop]
+    jbe .ndn
+    mov dx,1700h+71
+    call scr_at
+    mov al,19h
+    stosw
+.ndn:
+    mov di,24*160
+    mov ax,7020h
+    stosw
+    mov si,footer_h
+    call put_footer
+    mov bx,4000
+    call fill_to
+    pop es
+    jmp mouse_show
+
+skipz:                      ; si -> after the next 0
+    lodsb
+    test al,al
+    jnz skipz
     ret
 
 draw_footer:
@@ -853,100 +951,6 @@ draw_footer:
 .fill:
     mov bx,4000
     jmp fill_to
-
-put_footer:                 ; si = text, '~' toggles highlight color; out: ah = 70h
-    mov ah,70h
-.l: lodsb
-    test al,al
-    jz .r
-    cmp al,'~'
-    jne .s
-    xor ah,04h
-    jmp .l
-.s: cmp di,4000
-    jae .l
-    stosw
-    jmp .l
-.r: mov ah,70h
-    ret
-
-; dh = row, dl = column -> di = screen offset
-scr_at:
-    push ax
-    mov al,160
-    mul dh
-    mov di,ax
-    mov al,dl
-    xor ah,ah
-    shl ax,1
-    add di,ax
-    pop ax
-    ret
-
-put_at:                     ; dh,dl = position, si = text, cx = max length, ah = color
-    call scr_at
-    jmp put_str
-
-box_title:                  ; dh,dl = position, si = text, cx = max length, ah = color
-    call scr_at
-    mov al,' '
-    stosw
-    call put_str
-    mov al,' '
-    stosw
-    ret
-
-; double-line frame; dh,dl = top-left corner, ch,cl = bottom-right corner, ah = color
-draw_box:
-    push dx
-    push bp
-    call box_width
-    mov al,0C9h
-    mov bx,0CDBBh
-    call .line
-.mid:
-    inc dh
-    cmp dh,ch
-    jae .bot
-    mov al,0BAh
-    mov bx,20BAh
-    call .line
-    jmp .mid
-.bot:
-    mov al,0C8h
-    mov bx,0CDBCh
-    call .line
-    pop bp
-    pop dx
-    ret
-.line:                      ; al = left edge, bh = fill, bl = right edge
-    call scr_at
-    stosw
-    mov al,bh
-    push cx
-    mov cx,bp
-    rep stosw
-    pop cx
-    mov al,bl
-    stosw
-    ret
-
-box_width:                  ; bp = cl - dl - 1
-    mov bl,cl
-    sub bl,dl
-    dec bl
-    xor bh,bh
-    mov bp,bx
-    ret
-
-hsep:                       ; separator line inside the frame; dh = row, dl..cl, ah = color
-    push bp
-    call box_width
-    mov al,0C7h
-    mov bx,0C4B6h
-    call draw_box.line
-    pop bp
-    ret
 
 ; text with word wrap; si = text, dh,dl = position, ch = rows, cl = width, ah = color
 ; 0Ah = line break; [wr_skip] = wrapped lines to skip (scrolling); out: [wr_tot] = all lines
@@ -1013,25 +1017,6 @@ wrap_text:
     jne .line
     inc si
     jmp .line
-.r: ret
-
-; si = text, ah = color, cx = max length, es:di = screen
-put_str:
-    jcxz .r
-.l: lodsb
-    test al,al
-    jz .r
-    stosw
-    loop .l
-.r: ret
-
-; fill with spaces up to: bx (di target)
-fill_to:
-    mov al,' '
-.l: cmp di,bx
-    jae .r
-    stosw
-    jmp .l
 .r: ret
 
 put_num:

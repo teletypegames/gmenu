@@ -1,0 +1,25 @@
+ New METADATA.INI: \COLLECT\DELTA
+╔═ Game data ══════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║  Name         DELTA                                                          ║
+║  Genre                                                                       ║
+║  Year                                                                        ║
+║  Players                                                                     ║
+║                                                                              ║
+║  Description                                                                 ║
+║                                                                              ║
+║                                                                              ║
+║  Run          y                                                              ║
+║  Args         x                                                              ║
+║  Setup        INSTALL.BATz                                                   ║
+║                                                                              ║
+╟─ Executables ────────────────────────────────────────────────────────────────╢
+║  D1.EXE        D2.COM        INSTALL.BAT                                     ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+╟──────────────────────────────────────────────────────────────────────────────╢
+║  Ctrl+S runs it: the setup program of the game, with its arguments           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+ Tab/↑↓ Field  F2 Save  Esc Cancel  Ctrl+Y Clear

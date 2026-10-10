@@ -14,7 +14,8 @@ f_sel       db 'GMENU.SEL',0
 f_fav       db 'GMENU.FAV',0
 f_sta       db 'GMENU.STA',0
 f_idx       db 'GMENU.IDX',0
-def_dir     db '\GMENU\',0     ; progdir if the environment has no program path
+f_editor    db 'GMEDIT.COM',0
+s_edarg     db ' /B ',0
 zeros       dw 0,0,0,0
 s_echo      db '@echo off',13,10,0
 s_cd        db 'cd ',0
@@ -24,70 +25,37 @@ crlf        db 13,10,0
 key_tab     db 'NAME',0,'GENRE',0,'YEAR',0,'PLAYERS',0,'DESCRIPTION',0
             db 'RUN',0,'SETUP',0,'ARGS',0,0
 kv_lim      dw L_NAME,L_GENRE,L_YEAR,L_PLAYERS,L_DESC,L_CMD,L_CMD,L_CMD
-; UTF-8 -> CP437: U+00A0..U+00FF (accented letters CP437 lacks: base letter)
-u2c_a0      db ' ',0ADh,9Bh,9Ch,'?',9Dh,'|',15h,'"','c',0A6h,0AEh,0AAh,'-','r','-'
-            db 0F8h,0F1h,0FDh,'3',27h,0E6h,14h,0FAh,',','1',0A7h,0AFh,0ACh,0ABh,'?',0A8h
-            db 'AAAA',8Eh,8Fh,92h,80h,'E',90h,'EEIIII'
-            db 'D',0A5h,'OOOO',99h,'xOUUU',9Ah,'YP',0E1h
-            db 85h,0A0h,83h,'a',84h,86h,91h,87h,8Ah,82h,88h,89h,8Dh,0A1h,8Ch,8Bh
-            db 'd',0A4h,95h,0A2h,93h,'o',94h,0F6h,'o',97h,0A3h,96h,81h,'yp',98h
-; other code points: dw code point, db CP437 character; 0 = end
-u2c_pairs   dw 150h
-            db 99h                  ; O with double acute -> O umlaut
-            dw 151h
-            db 94h
-            dw 170h
-            db 9Ah                  ; U with double acute -> U umlaut
-            dw 171h
-            db 81h
-            dw 2013h
-            db '-'
-            dw 2014h
-            db '-'
-            dw 2018h
-            db 27h
-            dw 2019h
-            db 27h
-            dw 201Ah
-            db ','
-            dw 201Ch
-            db '"'
-            dw 201Dh
-            db '"'
-            dw 201Eh
-            db '"'
-            dw 2022h
-            db 7
-            dw 2026h
-            db '.'
-            dw 0
 footer_g    db '~Type~ Search ~Ctrl+Enter~ Play ~F1~ Help ~F2-4~ Filter ~F6/7~ Fav ~F9~ Sort ~F10~ Random',0
 footer_f    db '~',18h,19h,'~ Move ~Enter~ Run ~Tab~ All files ~F1~ Help ~F6~ Fav ~Ctrl+PgUp/Dn~ Text ~Esc~ Back',0
 footer_fa   db '~',18h,19h,'~ Move ~Enter~ Run ~Tab~ Executables ~F1~ Help ~F6~ Fav ~Ctrl+PgUp/Dn~ Text ~Esc~ Back',0
 footer_p    db '~',18h,19h,'~ Move  ~Enter~ Select  ~A-Z~ Jump  ~Esc~ Cancel',0
 str_help    db 'Keys',0
-help_txt    db '#Game list',0
-            db '  Typing         search in the titles, folders and descriptions',0
-            db '  Enter, click   open the game (files, description)',0
-            db '  Ctrl+Enter,    play: the RUN= command of METADATA.INI, or the',0
-            db '  double click     only executable; otherwise open the game',0
-            db '  Ctrl+S         run the SETUP= command of METADATA.INI',0
-            db '  F2 / F3 / F4   filter by genre / year / number of players',0
-            db '  F5 / Esc       clear the filters / the search, filters, quit',0
-            db '  F6 / F7        mark favorite / show the favorites only',0
-            db '  F8             recently played games',0
-            db '  F9             sort by title / year / genre / most played',0
-            db '  F10            pick a random game',0
-            db ' ',0
-            db '#Game page',0
-            db '  Enter, click   run the file (yellow ',10h,': the RUN= file)',0
-            db '  Tab            all files / executables only',0
-            db '  A-Z, 0-9       jump to the next file starting with it',0
-            db '  F6             mark favorite',0
-            db '  Ctrl+PgUp/PgDn scroll the description (also Shift+PgUp/PgDn',0
-            db '                   and the mouse wheel over the left box)',0
-            db '  Esc, ',1Bh,'         back to the game list',0
+; help: 1,title,0 = section; 0 = empty row; key,0,description,0; 0FFh = end
+help_txt    db 1,'Game list',0
+            db 'Enter, click',0,'open the game page',0
+            db 'Ctrl+Enter',0,'play (or double click)',0
+            db 'Ctrl+S',0,'run the setup',0
+            db 'Ctrl+E',0,'edit METADATA.INI',0
+            db 'Typing',0,'search',0
+            db 'F2  F3  F4',0,'filter: genre, year, players',0
+            db 'F5',0,'clear the filters',0
+            db 'F6  F7',0,'favorite, favorites only',0
+            db 'Shift+F7',0,'no METADATA.INI only',0
+            db 'F8',0,'recently played',0
+            db 'F9  F10',0,'sort order, random game',0
+            db 'Esc',0,'clear search, filters, quit',0
             db 0
+            db 1,'Game page',0
+            db 'Enter, click',0,'run the file',0
+            db 'Tab',0,'all files / executables',0
+            db 'A-Z  0-9',0,'jump to a file',0
+            db 'Ctrl+PgUp/Dn',0,'scroll the description',0
+            db 'F6',0,'favorite',0
+            db 'Ctrl+E',0,'edit METADATA.INI',0
+            db 'Esc  ',1Bh,0,'back to the list',0
+            db 0FFh
+help_keys   db 48h,-1,50h,1,49h,-HROWS,51h,HROWS,47h,-128,4Fh,127,0
+footer_h    db '~',18h,19h,' PgUp PgDn~ Scroll  ~Esc~ Close',0
 str_search  db 'Search: ',0
 str_searchh db '   (Backspace: delete, Esc: clear search)',0
 str_ctitle  db 'Title',0
@@ -100,6 +68,7 @@ str_hplayers db '  Players: ',0
 str_hfound  db '  Found: ',0
 str_hof     db ' of ',0
 str_hfav    db '  Favorites',0
+str_hnoini  db '  No METADATA.INI',0
 str_hsort   db '  Sort: ',0
 sort_names  db 'title',0,'year',0,'genre',0,'most played',0
 sort_cmps   dw cmp_title,cmp_year,cmp_genre,cmp_plays
@@ -128,10 +97,6 @@ msg_usebat  db 'Start the menu with GMENU.BAT (type GMENU).',13,10,'$'
 msg_nomem   db 'Not enough memory.',13,10,'$'
 msg_nogames db 'No game folders found in: $'
 crlf_d      db 13,10,'$'
-%ifdef TEST
-f_screen    db 'SCREEN.BIN',0
-%endif
-
 gcount   dw 0
 fcount   dw 0
 gsel     dw 0
@@ -147,6 +112,7 @@ fplayers times L_PLAYERS+1 db 0
 showall  db 0
 favonly  db 0
 sortmode db 0
+noini    db 0               ; only the games without METADATA.INI
 recent   times NREC*13 db 0
 %ifdef TEST
 tkp      dw testkeys
@@ -220,6 +186,8 @@ wr_w    resb 1
 wr_rows resw 1
 wr_tot  resw 1
 wr_skip resw 1
+htop    resw 1              ; help: first row shown, last possible first row
+hmax    resw 1
 dscroll resw 1              ; detail view: description lines scrolled off the top
 dlines  resw 1              ; detail view: wrapped description lines
 rattr   resb 1

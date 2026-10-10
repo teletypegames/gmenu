@@ -1,6 +1,16 @@
 GMENU – a small game menu for DOS / DOSBox.
 
-**Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, replace its `GMENUPRG.COM`. See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
+**Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, replace its `GMENUPRG.COM` and copy `GMEDIT.COM` next to it. See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
+
+**New in 1.1.0:**
+
+- `GMEDIT.COM`: creates or edits a game's `METADATA.INI` with a form (Ctrl+E in the list or on the game page). A new file starts with the folder's `NAME.TXT`, its executable and setup program; editing rewrites only the changed values, comments and the other lines are kept
+- Shift+F7: only the games without `METADATA.INI`
+- F1: the keys in a colored table that scrolls
+- `GMENU.SEL` has a new format: the last position and filters are reset once after the update
+
+**All features:**
+
 
 - Game list with title, genre, year and folder from `METADATA.INI` / `NAME.TXT`; search in titles, folders and descriptions
 - Filters by genre, year or decade (`1990s`) and number of players (`1-4` matches 2); favorites, recently played games
@@ -10,3 +20,4 @@ GMENU – a small game menu for DOS / DOSBox.
 - UTF-8 `METADATA.INI` / `NAME.TXT` converted to code page 437
 - `GMENU.IDX` cache: quick start with large collections
 - The `GMENU` folder can be anywhere; after a game the menu returns to the folder it was started from
+- `METADATA.INI` editor (`GMEDIT.COM`), games without `METADATA.INI` (Shift+F7)

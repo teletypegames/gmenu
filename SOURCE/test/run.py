@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Screen tests for GMENUPRG.COM in DOSBox.
 
-Each case builds the program with -DTEST and a list of keystrokes (TESTKEYS),
-runs it in DOSBox on a copy of test/collect, and compares the result with
+Each case builds the programs with -DTEST and a list of keystrokes (TESTKEYS),
+runs one in DOSBox on a copy of test/collect, and compares the result with
 test/expected/<case>.txt: the text screen the program saved (SCREEN.BIN) when
-the keystrokes ran out, or GMENURUN.BAT if the program started a game.
+the keystrokes ran out, or GMENURUN.BAT if the program started a game, followed by
+the METADATA.INI files that are new or changed in the copy of test/collect.
 
 usage: run.py [--update] [case ...]
   --update   write the results to expected/ instead of comparing
@@ -26,6 +27,7 @@ NAMED_KEYS = {
     "Up": 0x4800, "Down": 0x5000, "Left": 0x4B00, "Right": 0x4D00,
     "PgUp": 0x4900, "PgDn": 0x5100, "Home": 0x4700, "End": 0x4F00,
     "CtrlEnter": 0x1C0A, "CtrlS": 0x1F13, "CtrlPgUp": 0x8400, "CtrlPgDn": 0x7600,
+    "CtrlE": 0x1205, "CtrlY": 0x1519, "ShiftTab": 0x0F00, "ShiftF7": 0x5A00, "Del": 0x5300,
     "WheelUp": 0xFF02, "WheelDn": 0xFF03,
     **{f"F{n}": (0x3A + n) << 8 for n in range(1, 11)},
 }
@@ -58,7 +60,9 @@ def parse_keys(text):
 
 
 def load_cases():
-    """cases.txt: name | keys of run 1 ; keys of run 2 ... | program arguments (optional)"""
+    """cases.txt: name | keys of run 1 ; keys of run 2 ... | arguments of run 1 ; run 2 ...
+    (optional; a run without its own arguments gets the previous run's, the first one
+    /B \\COLLECT; arguments starting with GMEDIT run GMEDIT.COM instead of the menu)"""
     cases = []
     with open(os.path.join(HERE, "cases.txt"), encoding="utf-8") as f:
         for line in f:
@@ -67,8 +71,12 @@ def load_cases():
                 continue
             parts = [p.strip() for p in line.split("|")]
             name, runs = parts[0], [parse_keys(r) for r in parts[1].split(";")]
-            args = parts[2] if len(parts) > 2 and parts[2] else r"/B \COLLECT"
-            cases.append((name, runs, args))
+            given = [a.strip() for a in parts[2].split(";")] if len(parts) > 2 else []
+            args = []
+            for i in range(len(runs)):
+                args.append(given[i] if i < len(given) and given[i] else
+                            args[-1] if args else r"/B \COLLECT")
+            cases.append((name, list(zip(runs, args))))
     return cases
 
 
@@ -85,15 +93,27 @@ def normalize(text):
     return re.sub(r"\d{4}-\d\d-\d\d", "YYYY-MM-DD", text)
 
 
-def build(keys, out):
+def editor_run(args):
+    return args.split(" ", 1)[0].upper() == "GMEDIT"
+
+
+def build(keys, out, editor):
+    """both programs with the keys; for a GMEDIT run only GMEDIT.COM (the keys would not
+    fit in the menu's 64 KB)"""
     words = ",".join(f"0{k:04X}h" for k in keys) or "0"
+    env = {**os.environ, "OUT": out}
+    if editor:
+        env["ONLY"] = "editor"
     subprocess.run(["sh", os.path.join(SOURCE, "build.sh"), "-DTEST", f"-DTESTKEYS={words}"],
-                   env={**os.environ, "OUT": out}, check=True, stdout=subprocess.DEVNULL)
+                   env=env, check=True, stdout=subprocess.DEVNULL)
 
 
 def run_dosbox(dosbox, cdrive, args):
     version = subprocess.run([dosbox, "--version"], capture_output=True, text=True).stdout
-    cmds = [f"mount c {cdrive}", "c:", rf"\GMENU\GMENUPRG.COM {args}", "exit"]
+    prog = "GMENUPRG.COM"
+    if editor_run(args):
+        prog, args = "GMEDIT.COM", args[6:].strip()
+    cmds = [f"mount c {cdrive}", "c:", rf"\GMENU\{prog} {args}", "exit"]
     cmd = [dosbox]
     if "staging" in version.lower():
         cmd += ["--noprimaryconf", "--nolocalconf"]
@@ -109,17 +129,32 @@ def run_dosbox(dosbox, cdrive, args):
                    timeout=60)
 
 
-def run_case(dosbox, tmp, name, runs, args):
+def written_inis(collect):
+    """the METADATA.INI files of the copy of test/collect that are new or changed"""
+    out = ""
+    for folder in sorted(os.listdir(collect)):
+        path = os.path.join(collect, folder, "METADATA.INI")
+        orig = os.path.join(HERE, "collect", folder, "METADATA.INI")
+        if not os.path.exists(path):
+            continue
+        data = open(path, "rb").read()
+        if os.path.exists(orig) and open(orig, "rb").read() == data:
+            continue
+        out += f"{folder}\\METADATA.INI:\n" + data.decode("utf-8").replace("\r\n", "\n")
+    return out
+
+
+def run_case(dosbox, tmp, name, runs):
     cdrive = os.path.join(tmp, name, "c")
     gmenu = os.path.join(cdrive, "GMENU")
     os.makedirs(gmenu)
     shutil.copytree(os.path.join(HERE, "collect"), os.path.join(cdrive, "COLLECT"))
     result = ""
-    for keys in runs:               # the runs share GMENU.SEL / .FAV / .STA / .IDX
+    for keys, args in runs:         # the runs share GMENU.SEL / .FAV / .STA / .IDX
         for f in ("SCREEN.BIN", "GMENURUN.BAT"):
             if os.path.exists(os.path.join(gmenu, f)):
                 os.remove(os.path.join(gmenu, f))
-        build(keys, os.path.join(gmenu, "GMENUPRG.COM"))
+        build(keys, os.path.join(gmenu, "GMENUPRG.COM"), editor_run(args))
         run_dosbox(dosbox, cdrive, args)
         screen = os.path.join(gmenu, "SCREEN.BIN")
         runner = os.path.join(gmenu, "GMENURUN.BAT")
@@ -131,7 +166,7 @@ def run_case(dosbox, tmp, name, runs, args):
                 result = "GMENURUN.BAT:\n" + f.read().decode("cp437").replace("\r\n", "\n")
         else:
             result = "(no SCREEN.BIN or GMENURUN.BAT)\n"
-    return normalize(result)
+    return normalize(result + written_inis(os.path.join(cdrive, "COLLECT")))
 
 
 def main():
@@ -142,8 +177,8 @@ def main():
     cases = [c for c in load_cases() if not selected or c[0] in selected]
     failed = 0
     with tempfile.TemporaryDirectory() as tmp:
-        for name, runs, args in cases:
-            got = run_case(dosbox, tmp, name, runs, args)
+        for name, runs in cases:
+            got = run_case(dosbox, tmp, name, runs)
             path = os.path.join(HERE, "expected", name + ".txt")
             if update:
                 with open(path, "w", encoding="utf-8") as f:

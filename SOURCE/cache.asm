@@ -189,6 +189,10 @@ keep_stamp:
     mov si,stamp
     mov cx,STSZ/2
     rep movsw
+    cmp word [stamp+2],0    ; METADATA.INI date: 0 if there is none
+    jne .ini
+    or byte [es:bx+A_FLAGS],4
+.ini:
     cmp byte [gsrc],0
     je .r
     or byte [es:bx+A_FLAGS],2

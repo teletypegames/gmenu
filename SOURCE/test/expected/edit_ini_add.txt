@@ -1,0 +1,9 @@
+(no SCREEN.BIN or GMENURUN.BAT)
+ALPHA\METADATA.INI:
+[GAME]
+NAME=Alpha Strike
+GENRE=Action
+YEAR=1991
+PLAYERS=1-2
+DESCRIPTION=A side-scrolling shooter with eight levels.
+ARGS=-x

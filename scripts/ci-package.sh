@@ -1,7 +1,8 @@
 #!/bin/sh
 # Package the built menu for a release: dist/GMENU-<tag>.zip holds the GMENU folder as it
-# is installed (GMENU.BAT, GMENUPRG.COM, README.md, LICENSE.md), and dist/GMENUPRG.COM is
-# the program alone, for updating an installed menu.
+# is installed (GMENU.BAT, GMENUPRG.COM, GMEDIT.COM, README.md, LICENSE.md), and
+# dist/GMENUPRG.COM (and dist/GMEDIT.COM) are the programs alone, for updating an
+# installed menu. Versions before GMEDIT.COM have only GMENUPRG.COM.
 #
 #   scripts/ci-package.sh            the tag from Woodpecker (CI_COMMIT_TAG)
 #   TAG=v1.2.3 scripts/ci-package.sh
@@ -22,6 +23,7 @@ rm -rf "$DIST"
 mkdir -p "$DIST/GMENU"
 # GMENU.BAT keeps its CRLF line ends: it is copied, not regenerated.
 cp GMENU.BAT GMENUPRG.COM README.md LICENSE.md "$DIST/GMENU/"
+[ -f GMEDIT.COM ] && cp GMEDIT.COM "$DIST/GMENU/" && cp GMEDIT.COM "$DIST/"
 (cd "$DIST" && zip -q -r "GMENU-$TAG.zip" GMENU)
 cp GMENUPRG.COM "$DIST/"
 rm -rf "$DIST/GMENU"

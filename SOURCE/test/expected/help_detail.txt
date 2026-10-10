@@ -1,0 +1,25 @@
+ Bravo Racing  (BRAVO)                                              1/3
+╔═ B╔═ Keys ═══════════════════════════════════════════════════════════════╗═══╗
+║   ║  Game list ────────────────────────────────────────────────────────  ║   ║
+║  G║   Enter, click     open the game page                                ║   ║
+║  Y║   Ctrl+Enter       play (or double click)                            ║   ║
+║  P║   Ctrl+S           run the setup                                     ║   ║
+║  F║   Ctrl+E           edit METADATA.INI                                 ║   ║
+║  P║   Typing           search                                            ║   ║
+╟───║   F2  F3  F4       filter: genre, year, players                      ║   ║
+║  A║   F5               clear the filters                                 ║   ║
+║   ║   F6  F7           favorite, favorites only                          ║   ║
+║   ║   Shift+F7         no METADATA.INI only                              ║   ║
+║   ║   F8               recently played                                   ║   ║
+║   ║   F9  F10          sort order, random game                           ║   ║
+║   ║   Esc              clear search, filters, quit                       ║   ║
+║   ║                                                                      ║   ║
+║   ║  Game page ────────────────────────────────────────────────────────  ║   ║
+║   ║   Enter, click     run the file                                      ║   ║
+║   ║   Tab              all files / executables                           ║   ║
+║   ║   A-Z  0-9         jump to a file                                    ║   ║
+║   ║   Ctrl+PgUp/Dn     scroll the description                            ║   ║
+║   ║   F6               favorite                                          ║   ║
+║   ║   Ctrl+E           edit METADATA.INI                                 ║   ║
+╚═══╚══════════════════════════════════════════════════════════════════↓═══╝═══╝
+ ↑↓ PgUp PgDn Scroll  Esc Close

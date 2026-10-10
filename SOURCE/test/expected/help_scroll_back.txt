@@ -1,0 +1,25 @@
+ Games  (\COLLECT)                                                  1/8
+ Tit╔═ Keys ═══════════════════════════════════════════════════════════════╗
+ Alp║  Game list ────────────────────────────────────────────────────────  ║
+ Arv║   Enter, click     open the game page                                ║
+ Bra║   Ctrl+Enter       play (or double click)                            ║
+ Cha║   Ctrl+S           run the setup                                     ║
+ DEL║   Ctrl+E           edit METADATA.INI                                 ║
+ Ech║   Typing           search                                            ║
+ Fox║   F2  F3  F4       filter: genre, year, players                      ║
+ Hot║   F5               clear the filters                                 ║
+    ║   F6  F7           favorite, favorites only                          ║
+    ║   Shift+F7         no METADATA.INI only                              ║
+    ║   F8               recently played                                   ║
+    ║   F9  F10          sort order, random game                           ║
+    ║   Esc              clear search, filters, quit                       ║
+    ║                                                                      ║
+    ║  Game page ────────────────────────────────────────────────────────  ║
+    ║   Enter, click     run the file                                      ║
+    ║   Tab              all files / executables                           ║
+    ║   A-Z  0-9         jump to a file                                    ║
+    ║   Ctrl+PgUp/Dn     scroll the description                            ║
+    ║   F6               favorite                                          ║
+    ║   Ctrl+E           edit METADATA.INI                                 ║
+    ╚══════════════════════════════════════════════════════════════════↓═══╝
+ ↑↓ PgUp PgDn Scroll  Esc Close

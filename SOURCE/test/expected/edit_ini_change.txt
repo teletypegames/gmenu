@@ -1,0 +1,12 @@
+(no SCREEN.BIN or GMENURUN.BAT)
+BRAVO\METADATA.INI:
+[GAME]
+; RUN, SETUP and ARGS
+NAME = Bravo Racing
+GENRE=Arcade
+YEAR=1993
+PLAYERS=1
+RUN=bravo.exe -fast
+ARGS=-nosound
+SETUP=SETUP.BAT /q
+DESCRIPTION=A racing simulation.

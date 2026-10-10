@@ -5,10 +5,45 @@ launch:
     call write_runner
     call add_play
     call add_recent
+run_exit:                   ; GMENU.BAT runs GMENURUN.BAT, then starts the menu again
     call save_sel
     call restore_screen
     mov ax,4C00h
     int 21h
+
+; si = game entry: GMENURUN.BAT runs GMEDIT.COM (next to this program) for its folder,
+; which creates or edits its METADATA.INI; beep if there is no GMEDIT.COM
+edit_ini:
+    mov [curgame],si
+    mov dx,f_editor
+    call prog_file
+    xor cx,cx
+    mov ah,4Eh
+    int 21h
+    jc .no
+    mov di,outbuf           ; @echo off / progdir\GMEDIT.COM /B X:\dir\folder
+    mov si,s_echo
+    call strcpy
+    mov si,fpath
+    call strcpy
+    mov si,s_edarg
+    call strcpy
+    mov al,[gdrive]
+    stosb
+    mov al,':'
+    stosb
+    mov si,[cdpath]
+    call strcpy
+    mov al,'\'
+    stosb
+    mov si,[curgame]
+    call strcpy
+    mov si,crlf
+    call strcpy
+    call write_bat
+    jmp run_exit
+.no:
+    jmp beep
 
 ; si = game entry: run its RUN command; without RUN the only executable;
 ; otherwise (or if there is none) the detail view opens
@@ -182,6 +217,7 @@ write_runner:               ; [curgame], cmdbuf = command line
     call strcpy
     mov si,crlf
     call strcpy
+write_bat:                  ; outbuf..di -> GMENURUN.BAT
     mov cx,di
     sub cx,outbuf
     push cx

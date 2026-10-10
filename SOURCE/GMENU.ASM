@@ -27,6 +27,8 @@ GROWS    equ 22             ; game list rows (2..23)
 FROWS    equ 21             ; file list rows in detail view (2..22)
 PROWS    equ 21             ; picker list rows (2..22)
 DROWS    equ 14             ; description rows in detail view (9..22)
+HROWS    equ 21             ; help rows (2..22)
+HKW      equ 16             ; help: key cap width
 MAXP     equ 250            ; max values in the picker
 NREC     equ 10             ; recently played games
 MAXPL    equ 16             ; players filter: highest player count listed
@@ -43,12 +45,7 @@ F_RUN     equ 4             ; RUN / SETUP: command line (file [arguments]), ARGS
 F_SETUP   equ 5
 F_ARGS    equ 6
 NKEYS     equ 8             ; METADATA.INI keys: NAME + the far record fields
-L_NAME    equ 50            ; max field lengths
-L_GENRE   equ 24
-L_YEAR    equ 10
-L_PLAYERS equ 10
-L_DESC    equ 2000
-L_CMD     equ 60            ; RUN, SETUP, ARGS
+%include "limits.inc"     ; max field lengths (L_NAME ...)
 DBLT      equ 9             ; double click: max ticks (1/18.2 s) between the clicks
 
 C_TITLE  equ 1              ; game list columns
@@ -70,7 +67,8 @@ FCOL     equ 57             ; file list first column (inside right box)
 ; Memory after the program's 64 KB segment: stack, per game arrays (aux), far records
 STACKSZ  equ 800h           ; stack size (bytes)
 A_SEGS   equ 0              ; aux segment: far record segment per game (word)
-A_FLAGS  equ A_SEGS+MAXG*2  ;   flags per game (byte): bit 0 = favorite, 1 = title not from METADATA.INI
+A_FLAGS  equ A_SEGS+MAXG*2  ;   flags per game (byte): bit 0 = favorite, 1 = title not from
+                            ;   METADATA.INI, 2 = no METADATA.INI
 A_STAMP  equ A_FLAGS+MAXG   ;   file stamps per game (STSZ bytes, see cache.asm)
 A_PLAYS  equ A_STAMP+MAXG*16 ;  starts per game (word)
 A_LAST   equ A_PLAYS+MAXG*2 ;   date of the last start (word, DOS format)
@@ -193,4 +191,6 @@ beep:
 %include "launcher.asm"
 %include "session.asm"
 %include "helpers.asm"
+%include "common.asm"
+%include "utf8.asm"
 %include "data.asm"

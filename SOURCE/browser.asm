@@ -46,6 +46,8 @@ game_loop:
     je .play
     cmp al,13h              ; Ctrl+S: setup
     je .setup
+    cmp al,5                ; Ctrl+E: create METADATA.INI
+    je .edit
     cmp al,8
     je .bksp
     cmp al,' '
@@ -77,6 +79,8 @@ game_loop:
     je .fav
     cmp ah,41h              ; F7: favorites only
     je .favonly
+    cmp ah,5Ah              ; Shift+F7: games without METADATA.INI only
+    je .noini
     cmp ah,42h              ; F8: recently played
     je .recent
     cmp ah,43h              ; F9: sort order
@@ -112,6 +116,15 @@ game_loop:
 .favonly:
     xor byte [favonly],1
     call refilter
+    jmp game_loop
+.noini:
+    xor byte [noini],1
+    call refilter
+    jmp game_loop
+.edit:
+    call cur_game
+    jc game_loop
+    call edit_ini
     jmp game_loop
 .sort:
     mov al,[sortmode]
@@ -216,6 +229,8 @@ detail:                     ; si = game entry
     mov bx,WSTEP
     cmp ax,0FF03h
     je .scroll
+    cmp al,5                ; Ctrl+E: create METADATA.INI
+    je .edit
     test al,al
     jz .ext
     cmp al,0E0h
@@ -258,6 +273,10 @@ detail:                     ; si = game entry
 .tab:
     xor byte [showall],1
     jmp .rescan
+.edit:
+    mov si,[curgame]
+    call edit_ini
+    jmp .loop
 .fav:
     mov si,[curgame]
     call toggle_fav
@@ -308,42 +327,6 @@ scan_files:
     mov cx,[fcount]
     mov dx,stricmp
     call sort_ptrs
-    ret
-
-; si = filename; ZF=1 if .COM / .EXE / .BAT
-is_exec:
-.f: lodsb
-    test al,al
-    jz .no
-    cmp al,'.'
-    jne .f
-    mov al,[si]
-    call upcase
-    mov bl,al
-    mov al,[si+1]
-    call upcase
-    mov bh,al
-    mov al,[si+2]
-    call upcase
-    mov dl,al
-    cmp byte [si+3],0
-    jne .no
-    cmp bx,'CO'
-    jne .t2
-    cmp dl,'M'
-    ret
-.t2:
-    cmp bx,'EX'
-    jne .t3
-    cmp dl,'E'
-    ret
-.t3:
-    cmp bx,'BA'
-    jne .no
-    cmp dl,'T'
-    ret
-.no:
-    or al,1
     ret
 
 build_file_header:          ; header: "Title  (FOLDER)", dirbuf: full folder path
@@ -400,6 +383,11 @@ build_game_header:          ; header: "Games  (\COLLECT)" + match count + active
     mov si,str_hfav
     call strcpy
 .fl:
+    cmp byte [noini],0
+    je .fi
+    mov si,str_hnoini
+    call strcpy
+.fi:
     mov bx,fgenre
     mov si,str_hgenre
     call .add
