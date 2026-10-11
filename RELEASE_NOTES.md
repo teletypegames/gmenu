@@ -2,6 +2,10 @@ GMENU – a small game menu for DOS / DOSBox.
 
 **Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, replace its `GMENUPRG.COM` and copy `GMEDIT.COM` next to it. See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
 
+**New in 1.1.1:**
+
+- GMENU is also in the [DOSINST](https://git.teletypegames.org/tools/dosinst) program store (`ftp://ftp.teletypegames.org`): a DOS machine running DOSINST can install and update it from there. The menu itself is the same as in 1.1.0
+
 **New in 1.1.0:**
 
 - `GMEDIT.COM`: creates or edits a game's `METADATA.INI` with a form (Ctrl+E in the list or on the game page). A new file starts with the folder's `NAME.TXT`, its executable and setup program; editing rewrites only the changed values, comments and the other lines are kept
