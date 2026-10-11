@@ -49,7 +49,7 @@ trap 'rm -f "$LIST"' EXIT
 if [ "$#" -gt 0 ]; then
   for given in "$@"; do printf '%s\n' "$given"; done > "$LIST"
 else
-  find "$DIST" -maxdepth 1 -type f \( -name '*.zip' -o -name '*.COM' \) 2>/dev/null | sort > "$LIST" || true
+  find "$DIST" -maxdepth 1 -type f \( -name '*.zip' -o -name '*.EXE' \) 2>/dev/null | sort > "$LIST" || true
 fi
 [ -s "$LIST" ] || die "no packages in $DIST (run scripts/ci-package.sh first)"
 

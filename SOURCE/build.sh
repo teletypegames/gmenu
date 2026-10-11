@@ -1,50 +1,56 @@
 #!/bin/sh
-# Builds GMENUPRG.COM from GMENU.ASM and GMEDIT.COM from GMEDIT.ASM (requires NASM:
-# brew install nasm). Extra arguments are passed to nasm (e.g. -DTEST "-DTESTKEYS=...").
-# OUT=<file> overrides the menu's output file (default: ../GMENUPRG.COM), EDOUT=<file>
-# the editor's (default: GMEDIT.COM next to the menu). ONLY=menu / ONLY=editor builds
-# just one of them (the tests use it).
+# Builds ../GMENUPRG.EXE and ../GMEDIT.EXE with Open Watcom v2
+# (https://github.com/open-watcom/open-watcom-v2), as 16-bit DOS programs.
+# WATCOM points to the Open Watcom folder (default: ~/.local/opt/watcom).
+# ./build.sh test builds the test versions (the keys come from TESTKEYS.TXT, see
+# test/run.py) into build/.
 set -e
 cd "$(dirname "$0")"
-OUT=${OUT:-../GMENUPRG.COM}
-EDOUT=${EDOUT:-$(dirname "$OUT")/GMEDIT.COM}
+
+WATCOM=${WATCOM:-$HOME/.local/opt/watcom}
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64) BIN=armo64 ;;
+  Darwin-*) BIN=bino64 ;;
+  Linux-aarch64) BIN=arml64 ;;
+  *) BIN=binl64 ;;
+esac
+export WATCOM PATH="$WATCOM/$BIN:$PATH"
+if ! command -v wpp >/dev/null 2>&1; then
+  echo "Error: Open Watcom not found in $WATCOM (set WATCOM=<folder>)" >&2
+  exit 1
+fi
+
+OBJ=build
+OUT=..
+DEFS=
+if [ "$1" = test ]; then
+  OUT=$OBJ
+  DEFS=-dTEST
+fi
+rm -rf "$OBJ"
+mkdir -p "$OBJ"
 
 # gmenu.ini: collect_dir = default game directory (used when GMENU.BAT gives none)
 INI_FILE="../gmenu.ini"
 COLLECT_DIR='\COLLECT'
 if [ -f "$INI_FILE" ]; then
-    v=$(sed -n 's/^collect_dir[[:space:]]*=[[:space:]]*//p' "$INI_FILE" | tr -d '\r' | head -n 1)
-    [ -n "$v" ] && COLLECT_DIR=$v
+  v=$(sed -n 's/^collect_dir[[:space:]]*=[[:space:]]*//p' "$INI_FILE" | tr -d '\r' | head -n 1)
+  [ -n "$v" ] && COLLECT_DIR=$v
 fi
 case $COLLECT_DIR in
-    *\'*) echo "Error: collect_dir must not contain a quote" >&2; exit 1 ;;
+  *\"*) echo "Error: collect_dir must not contain a quote" >&2; exit 1 ;;
 esac
+COLLECT_C=$(printf '%s' "$COLLECT_DIR" | sed 's/\\/\\\\/g')
 
-if ! command -v nasm >/dev/null 2>&1; then
-    echo "Error: nasm not found. Install it with: brew install nasm (macOS) / apt install nasm (Linux)" >&2
-    exit 1
-fi
-
-if [ "$ONLY" != editor ]; then
-MAP=$(mktemp)
-trap 'rm -f "$MAP"' EXIT
-nasm -f bin "-DCOLLECT='$COLLECT_DIR'" "-DMAPFILE=$MAP" "$@" -o "$OUT" GMENU.ASM
-
-# code, data and BSS share the 64 KB segment (the stack has its own segment)
-BSS_END=$(awk '$3 == "bss_end" { print $1 }' "$MAP")
-if [ -z "$BSS_END" ]; then
-    echo "Error: bss_end not found in the map file" >&2
-    exit 1
-fi
-if [ $((0x$BSS_END)) -gt $((0xFFF0)) ]; then
-    echo "Error: the program and its data end at $BSS_END, beyond the 64 KB segment (limit FFF0)" >&2
-    rm -f "$OUT"
-    exit 1
-fi
-echo "OK: $OUT ($(wc -c < "$OUT" | tr -d ' ') bytes, data end: $BSS_END)"
-fi
-
-if [ "$ONLY" != menu ]; then
-nasm -f bin "$@" -o "$EDOUT" GMEDIT.ASM
-echo "OK: $EDOUT ($(wc -c < "$EDOUT" | tr -d ' ') bytes)"
-fi
+CFLAGS="-0 -ml -os -s -ei -we -zq -bt=dos -i=. -i=$WATCOM/h $DEFS"
+MENU="GMENU.CPP catalog.cpp cache.cpp filter.cpp favorites.cpp stats.cpp session.cpp sort.cpp
+      launcher.cpp ui.cpp browser.cpp common.cpp"
+for f in $MENU GMEDIT.CPP; do
+  wpp "$f" $CFLAGS "-dCOLLECT=\"$COLLECT_C\"" -fo="$OBJ/${f%.*}.obj"
+done
+objs() { for f in "$@"; do printf '%s,' "$OBJ/${f%.*}.obj"; done; }
+LINK="system dos option quiet option eliminate option stack=4096"
+wlink $LINK name "$OUT/GMENUPRG.EXE" file "$(objs $MENU | sed 's/,$//')"
+wlink $LINK name "$OUT/GMEDIT.EXE" file "$(objs GMEDIT.CPP common.cpp | sed 's/,$//')"
+rm -f "$OBJ"/*.obj
+ls -l "$OUT/GMENUPRG.EXE" "$OUT/GMEDIT.EXE"

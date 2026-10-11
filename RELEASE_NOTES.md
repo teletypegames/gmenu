@@ -1,6 +1,11 @@
 GMENU – a small game menu for DOS / DOSBox.
 
-**Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, replace its `GMENUPRG.COM` and copy `GMEDIT.COM` next to it. See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
+**Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, copy `GMENUPRG.EXE`, `GMEDIT.EXE` and the new `GMENU.BAT` into its folder (keep your game directory in `GMENU.BAT`). See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
+
+**New in 2.0.0:**
+
+- GMENU is rewritten in C++ (Open Watcom), like DOSINST; the menu works as in 1.1.1, and its files (`GMENU.SEL`, `.FAV`, `.STA`, `.IDX`) are kept
+- The programs are `GMENUPRG.EXE` and `GMEDIT.EXE` (they were `.COM`): an installed menu needs the new `GMENU.BAT` too, which starts `GMENUPRG.EXE`. DOSINST updates all of them and removes the old `.COM` files
 
 **New in 1.1.1:**
 
@@ -24,4 +29,4 @@ GMENU – a small game menu for DOS / DOSBox.
 - UTF-8 `METADATA.INI` / `NAME.TXT` converted to code page 437
 - `GMENU.IDX` cache: quick start with large collections
 - The `GMENU` folder can be anywhere; after a game the menu returns to the folder it was started from
-- `METADATA.INI` editor (`GMEDIT.COM`), games without `METADATA.INI` (Shift+F7)
+- `METADATA.INI` editor (`GMEDIT.EXE`), games without `METADATA.INI` (Shift+F7)

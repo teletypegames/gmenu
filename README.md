@@ -1,6 +1,6 @@
 # GMENU – game menu for DOS / DOSBox
 
-GMENU is a small DOS menu program (about 11 KB). It lists the game folders in a directory (`\COLLECT` by default) in a table with the title, genre, year and folder of each game. The data comes from the folder's `METADATA.INI` (or, if there is none, from the first line of `NAME.TXT`). Enter opens a detail page with all the game's data, how many times you played it, and the list of its `.COM`, `.EXE` and `.BAT` files, which you can start. Ctrl+Enter (or a double click) starts the game right away. It works with the keyboard and the mouse (including the wheel), it can search in the titles and descriptions, filter by genre, year (or decade) and number of players, sort by title, year, genre or the most played, and it remembers your favorite and recently played games. It can list the game folders that have no `METADATA.INI` yet, and create or edit a game's `METADATA.INI` with a form (`GMEDIT.COM`).
+GMENU is a small DOS menu program (about 31 KB). It lists the game folders in a directory (`\COLLECT` by default) in a table with the title, genre, year and folder of each game. The data comes from the folder's `METADATA.INI` (or, if there is none, from the first line of `NAME.TXT`). Enter opens a detail page with all the game's data, how many times you played it, and the list of its `.COM`, `.EXE` and `.BAT` files, which you can start. Ctrl+Enter (or a double click) starts the game right away. It works with the keyboard and the mouse (including the wheel), it can search in the titles and descriptions, filter by genre, year (or decade) and number of players, sort by title, year, genre or the most played, and it remembers your favorite and recently played games. It can list the game folders that have no `METADATA.INI` yet, and create or edit a game's `METADATA.INI` with a form (`GMEDIT.EXE`).
 
 ![GMENU game list](screenshot.png)
 
@@ -11,9 +11,9 @@ GMENU is a small DOS menu program (about 11 KB). It lists the game folders in a 
 | File | Purpose |
 |---|---|
 | `GMENU.BAT` | Starts the menu. The game directory is set here. |
-| `GMENUPRG.COM` | The compiled menu program. |
-| `GMEDIT.COM` | Creates or edits a game's `METADATA.INI` with a form (Ctrl+E in the menu, see [Editing METADATA.INI](#editing-metadataini)). |
-| `SOURCE/*.asm` | Source code (NASM, 16-bit x86): `GMENU.ASM` is the menu's main file, `GMEDIT.ASM` the editor's; they share `common.asm`, `utf8.asm` and `limits.inc`. |
+| `GMENUPRG.EXE` | The compiled menu program. |
+| `GMEDIT.EXE` | Creates or edits a game's `METADATA.INI` with a form (Ctrl+E in the menu, see [Editing METADATA.INI](#editing-metadataini)). |
+| `SOURCE/*.cpp` | Source code (C++, Open Watcom, 16-bit DOS): `GMENU.CPP` is the menu's main file (with `gmenu.h` and the modules `catalog`, `cache`, `filter`, `favorites`, `stats`, `session`, `sort`, `launcher`, `ui` and `browser`), `GMEDIT.CPP` the editor's; they share `common.cpp` / `common.h`. |
 | `SOURCE/build.sh` | Build script (macOS / Linux). |
 | `SOURCE/test/` | Screen tests that run the program in DOSBox (see [Tests](#tests)). |
 | `gmenu.ini` | Build settings: `collect_dir` is the default game directory compiled into the program. |
@@ -23,29 +23,22 @@ GMENU is a small DOS menu program (about 11 KB). It lists the game folders in a 
 | `GMENU.STA` | *Created at runtime:* how many times and when each game was started. |
 | `GMENU.IDX` | *Created at runtime:* a cache of the data read from `METADATA.INI` / `NAME.TXT`, so the menu starts quickly. You can delete it at any time. |
 
-The runtime files are created in the folder of `GMENUPRG.COM`.
+The runtime files are created in the folder of `GMENUPRG.EXE`.
 
 ## Building
 
-The build needs [NASM](https://www.nasm.us/):
-
-```sh
-brew install nasm        # macOS
-sudo apt install nasm    # Debian / Ubuntu
-```
-
-Then run this from the `SOURCE` folder:
+The build needs [Open Watcom v2](https://github.com/open-watcom/open-watcom-v2) (a snapshot release unpacked to `~/.local/opt/watcom`, or anywhere with `WATCOM=<folder>`). Then run this from the `SOURCE` folder:
 
 ```sh
 cd SOURCE
 ./build.sh
 ```
 
-It produces `GMENUPRG.COM` and `GMEDIT.COM` in the parent folder. `build.sh` takes the default game directory from `collect_dir` in `gmenu.ini` (used when `GMENU.BAT` gives no directory), and it checks that the program and its data fit in the 64 KB segment. To build by hand: `nasm -f bin -o ../GMENUPRG.COM GMENU.ASM` and `nasm -f bin -o ../GMEDIT.COM GMEDIT.ASM` (from `SOURCE/`).
+It produces `GMENUPRG.EXE` and `GMEDIT.EXE` in the parent folder. `build.sh` takes the default game directory from `collect_dir` in `gmenu.ini` (used when `GMENU.BAT` gives no directory). `./build.sh test` builds the test versions into `SOURCE/build/` (see [Tests](#tests)).
 
 ## Installation
 
-1. Copy the `GMENU` folder to the DOS drive, for example to `C:\GMENU\`. It can be in any folder (for example `C:\TOOLS\GMENU\`). The menu needs only `GMENU.BAT` and `GMENUPRG.COM`, and `GMEDIT.COM` for editing `METADATA.INI` files.
+1. Copy the `GMENU` folder to the DOS drive, for example to `C:\GMENU\`. It can be in any folder (for example `C:\TOOLS\GMENU\`). The menu needs only `GMENU.BAT` and `GMENUPRG.EXE`, and `GMEDIT.EXE` for editing `METADATA.INI` files.
 2. Put the games in one common directory. Give each game its own folder, and put a `METADATA.INI` (or at least a `NAME.TXT`) in each folder:
    ```
    C:\COLLECT\
@@ -85,10 +78,10 @@ It produces `GMENUPRG.COM` and `GMEDIT.COM` in the parent folder. `build.sh` tak
 
 ### Setting the game directory
 
-In `GMENU.BAT`, the last argument on the `GMENUPRG.COM` line is the game directory:
+In `GMENU.BAT`, the last argument on the `GMENUPRG.EXE` line is the game directory:
 
 ```bat
-%0PRG.COM /B \COLLECT
+%0PRG.EXE /B \COLLECT
 ```
 
 Add `/A` (for example `/B /A \COLLECT`) to show all files of a game on the detail page by default, not only the executables. (Tab switches between the two at any time.)
@@ -97,7 +90,7 @@ You can change it, for example to `\MYGAMES` or `D:\GAMES`. If you give another 
 
 ## Usage
 
-Start the menu with `gmenu` (if its folder is in the PATH), or with its full path, for example `C:\GMENU\GMENU`. Do not type the `.BAT` extension: `GMENU.BAT` finds `GMENUPRG.COM` and `GMENURUN.BAT` from the name it was started with.
+Start the menu with `gmenu` (if its folder is in the PATH), or with its full path, for example `C:\GMENU\GMENU`. Do not type the `.BAT` extension: `GMENU.BAT` finds `GMENUPRG.EXE` and `GMENURUN.BAT` from the name it was started with.
 
 F1 shows the keys in a table (↑ ↓, PgUp/PgDn or the wheel scroll it, Esc closes it).
 
@@ -152,7 +145,7 @@ The mouse wheel needs a driver with the CuteMouse WheelAPI (for example DOSBox S
 
 ### Editing METADATA.INI
 
-Ctrl+E (in the list or on the detail page) opens `GMEDIT.COM`, a form with the fields of the game's `METADATA.INI`. Shift+F7 lists the games that have none yet. If the game has a `METADATA.INI`, the form shows its values; if not, the form starts with what the folder tells:
+Ctrl+E (in the list or on the detail page) opens `GMEDIT.EXE`, a form with the fields of the game's `METADATA.INI`. Shift+F7 lists the games that have none yet. If the game has a `METADATA.INI`, the form shows its values; if not, the form starts with what the folder tells:
 
 - `NAME`: the first line of `NAME.TXT`, or the folder name,
 - `RUN`: the executable, if the folder has only one besides the setup programs,
@@ -170,13 +163,13 @@ The executables of the folder are listed under the form. `DESCRIPTION` is one li
 
 Saving changes only the lines of the values you changed: comments, other keys and the untouched values stay as they were (also their UTF-8 letters that code page 437 does not have, for example `ő`). A changed value is written in UTF-8 in place of its first line (more `DESCRIPTION=` lines become one, with `\n`), a new one at the end; a value you empty loses its line. If nothing changed, nothing is written. A new file starts with `[GAME]` and gets the values that are not empty. The file is first written as `METADATA.$$$`, then renamed. A `METADATA.INI` larger than 8 KB cannot be edited.
 
-Back in the menu the game shows its new data (and a new one drops out of the Shift+F7 list). `GMEDIT.COM` also works on its own: `GMEDIT C:\COLLECT\DOOM`.
+Back in the menu the game shows its new data (and a new one drops out of the Shift+F7 list). `GMEDIT.EXE` also works on its own: `GMEDIT C:\COLLECT\DOOM`.
 
 ## How it works
 
-`GMENUPRG.COM` is not in memory while a game runs, so the game gets all the free memory:
+`GMENUPRG.EXE` is not in memory while a game runs, so the game gets all the free memory:
 
-1. `GMENU.BAT` runs `GMENUPRG.COM /B <directory>` (as `%0PRG.COM`, so `C:\GMENU\GMENU` runs `C:\GMENU\GMENUPRG.COM`).
+1. `GMENU.BAT` runs `GMENUPRG.EXE /B <directory>` (as `%0PRG.EXE`, so `C:\GMENU\GMENU` runs `C:\GMENU\GMENUPRG.EXE`).
 2. When you choose a game, the program writes `GMENURUN.BAT` into its own folder and exits with code 0. When you quit, the exit code is 1, and on an error it is 2. `GMENURUN.BAT` looks like this:
    ```bat
    @echo off
@@ -188,7 +181,7 @@ Back in the menu the game shows its new data (and a new one drops out of the Shi
    ```
 3. `GMENU.BAT` runs it (with `call %0RUN.BAT`) and then starts the menu again.
 
-Ctrl+E works the same way: `GMENURUN.BAT` runs `GMEDIT.COM` (from the folder of `GMENUPRG.COM`) with the game's folder, for example `C:\GMENU\GMEDIT.COM /B C:\COLLECT\DOOM` (`/B`: an error message waits for a key, so that the menu does not clear it at once).
+Ctrl+E works the same way: `GMENURUN.BAT` runs `GMEDIT.EXE` (from the folder of `GMENUPRG.EXE`) with the game's folder, for example `C:\GMENU\GMEDIT.EXE /B C:\COLLECT\DOOM` (`/B`: an error message waits for a key, so that the menu does not clear it at once).
 
 The `/B` switch tells the program that `GMENU.BAT` started it. Without the switch, the program does not open the menu. It only prints that you must use `GMENU.BAT`. If it ran on its own, it would write `GMENURUN.BAT`, but nothing would start the game.
 
@@ -196,7 +189,7 @@ On start, the program checks each game's `METADATA.INI` (and `NAME.TXT`) date, t
 
 ## Tests
 
-`SOURCE/test/run.py` builds the program with a list of keystrokes for each case in `SOURCE/test/cases.txt`, runs it in DOSBox on the sample games in `SOURCE/test/collect`, and compares the screen (or the written `GMENURUN.BAT`, and the `METADATA.INI` files `GMEDIT.COM` wrote) with `SOURCE/test/expected/<case>.txt`. A case can also run `GMEDIT.COM` (see `cases.txt`). It needs Python 3, NASM and DOSBox (DOSBox Staging or DOSBox 0.74; set `DOSBOX=<path>` if it is not found):
+`SOURCE/test/run.py` builds the test versions of the programs (`build.sh test`: they read their keystrokes from `TESTKEYS.TXT` in their folder, and save the screen to `SCREEN.BIN` when the keys run out). For each case in `SOURCE/test/cases.txt` it writes the keystrokes of the case, runs the program in DOSBox on the sample games in `SOURCE/test/collect`, and compares the screen (or the written `GMENURUN.BAT`, and the `METADATA.INI` files `GMEDIT.EXE` wrote) with `SOURCE/test/expected/<case>.txt`. A case can also run `GMEDIT.EXE` (see `cases.txt`). It needs Python 3, Open Watcom and DOSBox (DOSBox Staging or DOSBox 0.74; set `DOSBOX=<path>` if it is not found):
 
 ```sh
 python3 SOURCE/test/run.py              # all cases
@@ -208,7 +201,7 @@ A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` run
 
 ## Releases
 
-Pushing a `vX.Y.Z` tag makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.COM` and `GMEDIT.COM` (to update an installed menu). The upload (`scripts/ci-upload.sh`) uses the `gitea_token` repository secret, or Woodpecker's forge credential when there is one.
+Pushing a `vX.Y.Z` tag makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.EXE` and `GMEDIT.EXE` (to update an installed menu). The upload (`scripts/ci-upload.sh`) uses the `gitea_token` repository secret, or Woodpecker's forge credential when there is one.
 
 The same tag also puts the menu into the [DOSINST](https://git.teletypegames.org/dos/dosinst) program store (`ftp://ftp.teletypegames.org`), so a DOS machine running DOSINST can install and update it: `scripts/ci-store.sh` writes the `GMENU` folder with an `INFO.INI` (the version is the tag without the `v`) into the server's `/srv/stacks/dosinst/programs`. This step mounts that folder, so the repository has to be trusted for volumes in Woodpecker.
 
