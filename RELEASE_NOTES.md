@@ -2,6 +2,12 @@ GMENU – a small game menu for DOS / DOSBox.
 
 **Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, copy `GMENUPRG.EXE`, `GMEDIT.EXE` and the new `GMENU.BAT` into its folder (keep your game directory in `GMENU.BAT`). See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
 
+**New in 2.1.0:**
+
+- The code is rebuilt in layers (model, repositories, services, controllers, views) on doslib, the library GMENU shares with DOSINST; the menu and GMEDIT work as in 2.0.0, and their files are the same. To update, copy `GMENUPRG.EXE` and `GMEDIT.EXE` (`GMENU.BAT` did not change)
+- `GMENU.IDX` and `GMENU.STA` no longer get random bytes after the folder names
+- Unit tests on the host and a layer check run in the pipeline before the DOSBox tests
+
 **New in 2.0.0:**
 
 - GMENU is rewritten in C++ (Open Watcom), like DOSINST; the menu works as in 1.1.1, and its files (`GMENU.SEL`, `.FAV`, `.STA`, `.IDX`) are kept

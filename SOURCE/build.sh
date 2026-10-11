@@ -1,24 +1,11 @@
 #!/bin/sh
-# Builds ../GMENUPRG.EXE and ../GMEDIT.EXE with Open Watcom v2
-# (https://github.com/open-watcom/open-watcom-v2), as 16-bit DOS programs.
+# Builds ../GMENUPRG.EXE and ../GMEDIT.EXE with Open Watcom v2, as 16-bit DOS programs.
 # WATCOM points to the Open Watcom folder (default: ~/.local/opt/watcom).
 # ./build.sh test builds the test versions (the keys come from TESTKEYS.TXT, see
 # test/run.py) into build/.
 set -e
 cd "$(dirname "$0")"
-
-WATCOM=${WATCOM:-$HOME/.local/opt/watcom}
-case "$(uname -s)-$(uname -m)" in
-  Darwin-arm64) BIN=armo64 ;;
-  Darwin-*) BIN=bino64 ;;
-  Linux-aarch64) BIN=arml64 ;;
-  *) BIN=binl64 ;;
-esac
-export WATCOM PATH="$WATCOM/$BIN:$PATH"
-if ! command -v wpp >/dev/null 2>&1; then
-  echo "Error: Open Watcom not found in $WATCOM (set WATCOM=<folder>)" >&2
-  exit 1
-fi
+. lib/tools/watcom.sh
 
 OBJ=build
 OUT=..
@@ -42,15 +29,34 @@ case $COLLECT_DIR in
 esac
 COLLECT_C=$(printf '%s' "$COLLECT_DIR" | sed 's/\\/\\\\/g')
 
-CFLAGS="-0 -ml -os -s -ei -we -zq -bt=dos -i=. -i=$WATCOM/h $DEFS"
-MENU="GMENU.CPP catalog.cpp cache.cpp filter.cpp favorites.cpp stats.cpp session.cpp sort.cpp
-      launcher.cpp ui.cpp browser.cpp common.cpp"
-for f in $MENU GMEDIT.CPP; do
-  wpp "$f" $CFLAGS "-dCOLLECT=\"$COLLECT_C\"" -fo="$OBJ/${f%.*}.obj"
-done
-objs() { for f in "$@"; do printf '%s,' "$OBJ/${f%.*}.obj"; done; }
+LIB="lib/core/str.cpp lib/core/ini.cpp lib/core/text.cpp
+     lib/platform/file_system.cpp lib/platform/dos/dos_text_output.cpp
+     lib/platform/dos/dos_file_system.cpp lib/platform/dos/dos_screen.cpp lib/platform/dos/bios_keyboard.cpp
+     lib/platform/dos/dos_speaker.cpp lib/ui/canvas.cpp lib/testing/scripted_keyboard.cpp lib/testing/screen_dump.cpp"
+MENU="lib/ui/list_cursor.cpp
+      lib/platform/dos/int33_mouse.cpp lib/platform/dos/bios_clock.cpp lib/platform/dos/dos_idle.cpp
+      model/game.cpp model/game_library.cpp model/filter_criteria.cpp model/recent_list.cpp model/visible_games.cpp
+      model/metadata.cpp model/locations.cpp model/launch_command.cpp model/pick_list.cpp model/file_list.cpp
+      repository/files/index_file.cpp repository/files/folder_game_repository.cpp repository/files/fav_file_repository.cpp
+      repository/files/sta_file_repository.cpp repository/files/sel_file_repository.cpp repository/files/bat_launcher_repository.cpp
+      repository/files/folder_files_repository.cpp
+      service/library_service.cpp service/launch_service.cpp service/picker_service.cpp
+      controller/menu_input.cpp controller/list_runner.cpp controller/game_list_controller.cpp
+      controller/detail_controller.cpp controller/picker_controller.cpp controller/help_controller.cpp
+      view/frame.cpp view/game_list_view.cpp view/detail_view.cpp view/picker_view.cpp view/help_view.cpp
+      app/gmenu.cpp"
+EDIT="model/locations.cpp model/metadata_form.cpp model/executable_list.cpp
+      repository/files/folder_metadata_repository.cpp service/metadata_edit_service.cpp
+      controller/edit_form_controller.cpp view/edit_form_view.cpp app/gmedit.cpp"
+LIB=$(echo $LIB)
+MENU=$(echo $MENU)
+EDIT=$(echo $EDIT)
+
+CFLAGS="-0 -ml -os -s -ei -zm -we -zq -bt=dos -i=$WATCOM/h $DEFS"
+compile wpp "$CFLAGS" $LIB $(echo $MENU $EDIT | tr ' ' '\n' | sort -u) main_gmedit.cpp
+compile wpp "$CFLAGS -dCOLLECT=\"$COLLECT_C\"" main_gmenu.cpp
 LINK="system dos option quiet option eliminate option stack=4096"
-wlink $LINK name "$OUT/GMENUPRG.EXE" file "$(objs $MENU | sed 's/,$//')"
-wlink $LINK name "$OUT/GMEDIT.EXE" file "$(objs GMEDIT.CPP common.cpp | sed 's/,$//')"
+wlink $LINK name "$OUT/GMENUPRG.EXE" file "$(objs $LIB $MENU main_gmenu.cpp)"
+wlink $LINK name "$OUT/GMEDIT.EXE" file "$(objs $LIB $EDIT main_gmedit.cpp)"
 rm -f "$OBJ"/*.obj
 ls -l "$OUT/GMENUPRG.EXE" "$OUT/GMEDIT.EXE"

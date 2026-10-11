@@ -1,8 +1,10 @@
-# Builds GMENUPRG.EXE and GMEDIT.EXE with Open Watcom and runs the screen tests:
+# First the fast checks (scripts/ci-check.sh): the code style, the layers and the unit
+# tests on the host (SOURCE/test/unit). Then it builds GMENUPRG.EXE and GMEDIT.EXE with
+# Open Watcom and runs the screen tests:
 # SOURCE/test/run.py runs the programs in DOSBox for every case of SOURCE/test/cases.txt
 # and compares the screen with the expected one. Debian's dosbox package is DOSBox 0.74,
 # which run.py drives headless (SDL dummy video and audio); the same tests also pass with
-# DOSBox Staging. scripts/ci-toolchain.sh installs the pinned Open Watcom.
+# DOSBox Staging. scripts/ci-toolchain.sh installs the pinned Open Watcom and clang-format.
 #
 # A tag (vX.Y.Z) also publishes a Gitea release: GMENU-<tag>.zip with the GMENU folder
 # to install, and GMENUPRG.EXE and GMEDIT.EXE alone, for updating an installed menu.
@@ -22,6 +24,7 @@ steps:
     image: debian:bookworm-slim
     commands:
       - scripts/ci-toolchain.sh
+      - scripts/ci-check.sh
       - scripts/ci-build.sh
       - scripts/ci-test.sh
 

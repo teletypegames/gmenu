@@ -1,6 +1,6 @@
 # GMENU – game menu for DOS / DOSBox
 
-GMENU is a small DOS menu program (about 31 KB). It lists the game folders in a directory (`\COLLECT` by default) in a table with the title, genre, year and folder of each game. The data comes from the folder's `METADATA.INI` (or, if there is none, from the first line of `NAME.TXT`). Enter opens a detail page with all the game's data, how many times you played it, and the list of its `.COM`, `.EXE` and `.BAT` files, which you can start. Ctrl+Enter (or a double click) starts the game right away. It works with the keyboard and the mouse (including the wheel), it can search in the titles and descriptions, filter by genre, year (or decade) and number of players, sort by title, year, genre or the most played, and it remembers your favorite and recently played games. It can list the game folders that have no `METADATA.INI` yet, and create or edit a game's `METADATA.INI` with a form (`GMEDIT.EXE`).
+GMENU is a small DOS menu program (about 45 KB). It lists the game folders in a directory (`\COLLECT` by default) in a table with the title, genre, year and folder of each game. The data comes from the folder's `METADATA.INI` (or, if there is none, from the first line of `NAME.TXT`). Enter opens a detail page with all the game's data, how many times you played it, and the list of its `.COM`, `.EXE` and `.BAT` files, which you can start. Ctrl+Enter (or a double click) starts the game right away. It works with the keyboard and the mouse (including the wheel), it can search in the titles and descriptions, filter by genre, year (or decade) and number of players, sort by title, year, genre or the most played, and it remembers your favorite and recently played games. It can list the game folders that have no `METADATA.INI` yet, and create or edit a game's `METADATA.INI` with a form (`GMEDIT.EXE`).
 
 ![GMENU game list](screenshot.png)
 
@@ -13,7 +13,7 @@ GMENU is a small DOS menu program (about 31 KB). It lists the game folders in a 
 | `GMENU.BAT` | Starts the menu. The game directory is set here. |
 | `GMENUPRG.EXE` | The compiled menu program. |
 | `GMEDIT.EXE` | Creates or edits a game's `METADATA.INI` with a form (Ctrl+E in the menu, see [Editing METADATA.INI](#editing-metadataini)). |
-| `SOURCE/*.cpp` | Source code (C++, Open Watcom, 16-bit DOS): `GMENU.CPP` is the menu's main file (with `gmenu.h` and the modules `catalog`, `cache`, `filter`, `favorites`, `stats`, `session`, `sort`, `launcher`, `ui` and `browser`), `GMEDIT.CPP` the editor's; they share `common.cpp` / `common.h`. |
+| `SOURCE/` | Source code (C++, Open Watcom, 16-bit DOS), in layers (see [Structure](#structure)): `main_gmenu.cpp` and `main_gmedit.cpp` are the two programs' entries. |
 | `SOURCE/build.sh` | Build script (macOS / Linux). |
 | `SOURCE/test/` | Screen tests that run the program in DOSBox (see [Tests](#tests)). |
 | `gmenu.ini` | Build settings: `collect_dir` is the default game directory compiled into the program. |
@@ -35,6 +35,22 @@ cd SOURCE
 ```
 
 It produces `GMENUPRG.EXE` and `GMEDIT.EXE` in the parent folder. `build.sh` takes the default game directory from `collect_dir` in `gmenu.ini` (used when `GMENU.BAT` gives no directory). `./build.sh test` builds the test versions into `SOURCE/build/` (see [Tests](#tests)).
+
+## Structure
+
+Both programs are built from the same layers; each layer uses only the ones below it, and only through their interfaces (`SOURCE/lib/tools/check_layers.py` checks the includes):
+
+| Folder | Layer |
+|---|---|
+| `SOURCE/model` | The data and its rules, no I/O: `Game`, `GameLibrary` (the games and their sort orders), `FilterCriteria` (search and filters), `Session`, `Metadata` (reading METADATA.INI), `MetadataForm` (GMEDIT's line-keeping editing), the `GMENURUN.BAT` commands. |
+| `SOURCE/repository` | Interfaces of the storage: the games, the favorites, the statistics, the session, GMENURUN.BAT, a game folder's files. Their implementations on the disk are in `repository/files` (with the `GMENU.IDX` cache). |
+| `SOURCE/service` | What the menu does: `LibraryService` (search, filters, sort order, favorites, the selected game), `LaunchService` (RUN / SETUP / a file, the statistics, the recent list), `PickerService`; GMEDIT's `MetadataEditService`. |
+| `SOURCE/controller` | The pages: the game list, the game page, the pickers, the help, GMEDIT's form; `ListRunner` moves in a list with the keys and the mouse. |
+| `SOURCE/view` | Drawing the pages. |
+| `SOURCE/app` | `runGmenu` and `runGmedit`: put the layers together for a machine. |
+| `SOURCE/lib` | doslib, shared with [DOSINST](https://git.teletypegames.org/dos/dosinst): strings, INI, UTF-8, the screen, the keyboard, the mouse, the file system, the test helpers. |
+
+The rules of the code (C++98 for Open Watcom, interfaces, names, format) are in `SOURCE/lib/README.md`.
 
 ## Installation
 
@@ -189,6 +205,13 @@ On start, the program checks each game's `METADATA.INI` (and `NAME.TXT`) date, t
 
 ## Tests
 
+`SOURCE/test/unit/run.sh` runs the unit tests on the host with its C++ compiler: the filters, the sort orders, METADATA.INI reading and GMEDIT's line-keeping writing, the GMENU.IDX cache, GMENU.SEL, the services, and the whole menu and editor with scripted keys on an in-memory disk. It needs no DOSBox and checks the layers first.
+
+```sh
+SOURCE/test/unit/run.sh           # all
+SOURCE/test/unit/run.sh filter    # the tests with "filter" in their name
+```
+
 `SOURCE/test/run.py` builds the test versions of the programs (`build.sh test`: they read their keystrokes from `TESTKEYS.TXT` in their folder, and save the screen to `SCREEN.BIN` when the keys run out). For each case in `SOURCE/test/cases.txt` it writes the keystrokes of the case, runs the program in DOSBox on the sample games in `SOURCE/test/collect`, and compares the screen (or the written `GMENURUN.BAT`, and the `METADATA.INI` files `GMEDIT.EXE` wrote) with `SOURCE/test/expected/<case>.txt`. A case can also run `GMEDIT.EXE` (see `cases.txt`). It needs Python 3, Open Watcom and DOSBox (DOSBox Staging or DOSBox 0.74; set `DOSBOX=<path>` if it is not found):
 
 ```sh
@@ -197,7 +220,7 @@ python3 SOURCE/test/run.py help sort_year   # some cases
 python3 SOURCE/test/run.py --update     # accept the current results as expected
 ```
 
-A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` runs the build and the tests in Woodpecker CI.
+A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` runs the checks (`scripts/ci-check.sh`: the code style, the layers, the unit tests), the build and the screen tests in Woodpecker CI.
 
 ## Releases
 
