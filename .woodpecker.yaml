@@ -6,6 +6,11 @@
 # A tag (vX.Y.Z) also publishes a Gitea release: GMENU-<tag>.zip with the GMENU folder
 # to install, and GMENUPRG.COM and GMEDIT.COM alone, for updating an installed menu. The scripts work
 # on every tagged version, also on the ones from before the tests and SOURCE/ existed.
+#
+# A tag also puts the menu into the DOSINST program store (tools/dosinst, served as
+# ftp://ftp.teletypegames.org): the store step writes the GMENU folder with an INFO.INI
+# into the server's /srv/stacks/dosinst/programs. The volume needs the repository to be
+# trusted for volumes in Woodpecker (Repo settings -> Trusted).
 when:
   - event: [push, manual]
     branch: master
@@ -35,5 +40,15 @@ steps:
       - apk add --no-cache curl jq zip
       - scripts/ci-package.sh
       - scripts/ci-upload.sh
+    when:
+      - event: tag
+
+  # Only on a tag, after the release: DOSINST installs and updates GMENU from the store.
+  - name: store
+    image: alpine
+    volumes:
+      - /srv/stacks/dosinst/programs:/store
+    commands:
+      - scripts/ci-store.sh
     when:
       - event: tag
