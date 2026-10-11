@@ -7,7 +7,7 @@
 # to install, and GMENUPRG.COM and GMEDIT.COM alone, for updating an installed menu. The scripts work
 # on every tagged version, also on the ones from before the tests and SOURCE/ existed.
 #
-# A tag also puts the menu into the DOSINST program store (tools/dosinst, served as
+# A tag also puts the menu into the DOSINST program store (dos/dosinst, served as
 # ftp://ftp.teletypegames.org): the store step writes the GMENU folder with an INFO.INI
 # into the server's /srv/stacks/dosinst/programs. The volume needs the repository to be
 # trusted for volumes in Woodpecker (Repo settings -> Trusted).

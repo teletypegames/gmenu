@@ -4,7 +4,7 @@ GMENU – a small game menu for DOS / DOSBox.
 
 **New in 1.1.1:**
 
-- GMENU is also in the [DOSINST](https://git.teletypegames.org/tools/dosinst) program store (`ftp://ftp.teletypegames.org`): a DOS machine running DOSINST can install and update it from there. The menu itself is the same as in 1.1.0
+- GMENU is also in the [DOSINST](https://git.teletypegames.org/dos/dosinst) program store (`ftp://ftp.teletypegames.org`): a DOS machine running DOSINST can install and update it from there. The menu itself is the same as in 1.1.0
 
 **New in 1.1.0:**
 

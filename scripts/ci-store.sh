@@ -1,5 +1,5 @@
 #!/bin/sh
-# Publish the built menu to the DOSINST program store (tools/dosinst,
+# Publish the built menu to the DOSINST program store (dos/dosinst,
 # ftp://ftp.teletypegames.org): the GMENU folder as it is installed, plus an INFO.INI
 # with the version of the tag, so DOSINST can install and update it.
 #

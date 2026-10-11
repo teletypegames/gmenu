@@ -210,7 +210,7 @@ A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` run
 
 Pushing a `vX.Y.Z` tag makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.COM` and `GMEDIT.COM` (to update an installed menu). The upload (`scripts/ci-upload.sh`) uses the `gitea_token` repository secret, or Woodpecker's forge credential when there is one.
 
-The same tag also puts the menu into the [DOSINST](https://git.teletypegames.org/tools/dosinst) program store (`ftp://ftp.teletypegames.org`), so a DOS machine running DOSINST can install and update it: `scripts/ci-store.sh` writes the `GMENU` folder with an `INFO.INI` (the version is the tag without the `v`) into the server's `/srv/stacks/dosinst/programs`. This step mounts that folder, so the repository has to be trusted for volumes in Woodpecker.
+The same tag also puts the menu into the [DOSINST](https://git.teletypegames.org/dos/dosinst) program store (`ftp://ftp.teletypegames.org`), so a DOS machine running DOSINST can install and update it: `scripts/ci-store.sh` writes the `GMENU` folder with an `INFO.INI` (the version is the tag without the `v`) into the server's `/srv/stacks/dosinst/programs`. This step mounts that folder, so the repository has to be trusted for volumes in Woodpecker.
 
 ```sh
 git tag v1.0.0
