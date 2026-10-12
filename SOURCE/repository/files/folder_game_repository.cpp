@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <string.h>
 
 #include "folder_game_repository.h"
@@ -26,11 +25,12 @@ private:
 };
 
 FolderGameRepository::FolderGameRepository( FileSystem &fs, const Locations &where )
-  : fs_( fs ), where_( where ), index_( fs, indexPath_, where.gameDir ), titleFromNameFile_( false ) {
+  : fs_( fs ), where_( where ), library_( NULL ), index_( fs, indexPath_, where.gameDir ), titleFromNameFile_( false ) {
   where.progFile( "GMENU.IDX", indexPath_ );
 }
 
 void FolderGameRepository::load( GameLibrary &library ) {
+  library_ = &library;
   char pattern[96];
   strcpy( pattern, where_.gameDir );
   strcat( pattern, "\\*.*" );
@@ -99,15 +99,12 @@ bool FolderGameRepository::fromIndex( Game &game ) {
   if ( !index_.read( size, 2 ) ) return false;
   len = size[0] | ( size[1] << 8 );
   if ( len == 0 ) return true;
-  char *record = (char *)malloc( len );
+  char *record = library_->allocRecord( len );
   if ( record == NULL ) {
     index_.drop();
     return false;
   }
-  if ( !index_.read( record, len ) ) {
-    free( record );
-    return false;
-  }
+  if ( !index_.read( record, len ) ) return false;
   game.record = record;
   return true;
 }
@@ -115,7 +112,7 @@ bool FolderGameRepository::fromIndex( Game &game ) {
 void FolderGameRepository::fromFiles( Game &game ) {
   if ( readGameFile( game, MetadataFile ) >= 0 ) {
     metadata_.parse( text_ );
-    metadata_.storeRecord( game );
+    metadata_.storeRecord( game, *library_ );
     if ( metadata_.hasName() ) {
       metadata_.applyTitle( game );
       return;

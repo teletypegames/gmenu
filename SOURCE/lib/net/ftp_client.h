@@ -43,7 +43,11 @@ private:
   bool readLine( char *out, int size );
   int readReply();
   bool send( const char *fmt, ... );
+  bool login( const char *user, const char *password );
+  bool setBinaryMode();
   bool openData();
+  bool parsePasvPort( unsigned &port );
+  bool receiveData( ByteSink &sink, const char *label, TransferObserver *observer );
   int transfer( const char *command, const char *arg, ByteSink &sink, const char *label, TransferObserver *observer );
   void closeHandle( int &handle );
 

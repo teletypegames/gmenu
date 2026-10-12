@@ -10,6 +10,7 @@
 #include "limits.h"
 
 struct Game;
+class GameLibrary;
 
 class Metadata {
 public:
@@ -17,9 +18,9 @@ public:
   bool hasName() const;
   /* The title from NAME. */
   void applyTitle( Game &game ) const;
-  /* GENRE..ARGS as the game's new record (none when they are all empty or there is no
-     memory). */
-  void storeRecord( Game &game );
+  /* GENRE..ARGS as the game's new record from the library's pool (none when they are all
+     empty or there is no memory). */
+  void storeRecord( Game &game, GameLibrary &library );
 
 private:
   enum { KeyCount = 8, KeyName = 0, KeyDesc = 4 };

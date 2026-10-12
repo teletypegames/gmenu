@@ -59,6 +59,8 @@ private:
   int fileIndex( const char *key ) const;
   int folderIndex( const char *key ) const;
   bool parentExists( const char *key ) const;
+  bool hasChildren( const char *key ) const;
+  int allocHandle( int fileIndex, bool writing );
   void addFolders( const char *key );
   int newFile( const char *key );
   void setData( File &f, const void *data, unsigned len );

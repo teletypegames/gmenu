@@ -22,6 +22,8 @@ public:
 private:
   int drawData( const Game &game, int scroll );
   void infoLine( int row, const Game &game, int field, const char *label );
+  void drawFolderAndPlayed( const Game &game );
+  int drawDescription( const Game &game, int scroll );
   void drawFiles( const ListCursor &cursor, const Game &game, const FileList &files, bool showAll );
 
   Frame &frame_;

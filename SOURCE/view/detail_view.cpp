@@ -58,9 +58,30 @@ void DetailView::infoLine( int row, const Game &game, int field, const char *lab
   else canvas.textAt( row, 13, "-", DetailLeftEnd - 14, AttrDim );
 }
 
-int DetailView::drawData( const Game &game, int scroll ) {
+void DetailView::drawFolderAndPlayed( const Game &game ) {
   Canvas &canvas = frame_.canvas();
   char text[96];
+  canvas.textAt( 6, 3, "Folder", 10, AttrLabel );
+  where_.gameFile( game.folder, "", text );
+  canvas.textAt( 6, 13, text, DetailLeftEnd - 14, AttrValue );
+  canvas.textAt( 7, 3, "Played", 10, AttrLabel );
+  game.playedText( text );
+  canvas.textAt( 7, 13, text, DetailLeftEnd - 14, AttrValue );
+}
+
+int DetailView::drawDescription( const Game &game, int scroll ) {
+  Canvas &canvas = frame_.canvas();
+  const char *desc = game.field( FieldDesc );
+  int lines;
+  if ( *desc ) lines = wrapText( canvas, desc, 9, 3, DescRows, DetailLeftEnd - 4, AttrDim, scroll );
+  else lines = wrapText( canvas, "No description.", 9, 3, DescRows, DetailLeftEnd - 4, 0x18, scroll );
+  if ( scroll ) canvas.put( Canvas::at( 8, DetailLeftEnd - 2 ), 0x18, AttrFrame );
+  if ( lines - scroll > DescRows ) canvas.put( Canvas::at( 23, DetailLeftEnd - 2 ), 0x19, AttrFrame );
+  return lines;
+}
+
+int DetailView::drawData( const Game &game, int scroll ) {
+  Canvas &canvas = frame_.canvas();
   canvas.box( 1, 0, 23, DetailLeftEnd, AttrFrame );
   int pos = canvas.boxTitle( 1, 2, game.title, DetailLeftEnd - 7, AttrTitle );
   if ( game.isFavorite() ) {
@@ -71,19 +92,8 @@ int DetailView::drawData( const Game &game, int scroll ) {
   infoLine( 3, game, FieldGenre, "Genre" );
   infoLine( 4, game, FieldYear, "Year" );
   infoLine( 5, game, FieldPlayers, "Players" );
-  canvas.textAt( 6, 3, "Folder", 10, AttrLabel );
-  where_.gameFile( game.folder, "", text );
-  canvas.textAt( 6, 13, text, DetailLeftEnd - 14, AttrValue );
-  canvas.textAt( 7, 3, "Played", 10, AttrLabel );
-  game.playedText( text );
-  canvas.textAt( 7, 13, text, DetailLeftEnd - 14, AttrValue );
-  const char *desc = game.field( FieldDesc );
-  int lines;
-  if ( *desc ) lines = wrapText( canvas, desc, 9, 3, DescRows, DetailLeftEnd - 4, AttrDim, scroll );
-  else lines = wrapText( canvas, "No description.", 9, 3, DescRows, DetailLeftEnd - 4, 0x18, scroll );
-  if ( scroll ) canvas.put( Canvas::at( 8, DetailLeftEnd - 2 ), 0x18, AttrFrame );
-  if ( lines - scroll > DescRows ) canvas.put( Canvas::at( 23, DetailLeftEnd - 2 ), 0x19, AttrFrame );
-  return lines;
+  drawFolderAndPlayed( game );
+  return drawDescription( game, scroll );
 }
 
 void DetailView::drawFiles( const ListCursor &cursor, const Game &game, const FileList &files, bool showAll ) {

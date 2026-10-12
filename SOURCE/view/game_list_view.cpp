@@ -62,7 +62,7 @@ static int column( Canvas &canvas, int pos, int rowStart, int col, const char *s
   return canvas.text( pos, s, width, attr );
 }
 
-void GameListView::drawRows( const ListCursor &cursor ) {
+void GameListView::drawHeaderRow() {
   Canvas &canvas = frame_.canvas();
   int pos = Cols, rowStart = Cols;
   pos = column( canvas, pos, rowStart, ColTitle, "Title", WidthTitle, AttrHeads );
@@ -70,26 +70,37 @@ void GameListView::drawRows( const ListCursor &cursor ) {
   pos = column( canvas, pos, rowStart, ColYear, "Year", WidthYear, AttrHeads );
   pos = column( canvas, pos, rowStart, ColFolder, "Folder", WidthFolder, AttrHeads );
   canvas.fillTo( pos, rowStart + Cols, AttrHeads );
+}
+
+void GameListView::drawGameRow( int row, const Game &game, bool selected ) {
+  Canvas &canvas = frame_.canvas();
+  unsigned char a = selected ? AttrSelected : AttrRow;
+  int rowStart = Canvas::at( row, 0 );
+  int pos = rowStart;
+  pos = column( canvas, pos, rowStart, ColTitle, game.title, WidthTitle, a );
+  pos = column( canvas, pos, rowStart, ColGenre, game.field( FieldGenre ), WidthGenre, selected ? a : 0x1B );
+  pos = column( canvas, pos, rowStart, ColYear, game.field( FieldYear ), WidthYear, selected ? a : 0x1E );
+  pos = column( canvas, pos, rowStart, ColFolder, game.folder, WidthFolder, selected ? a : 0x17 );
+  if ( game.isFavorite() ) {
+    pos = canvas.fillTo( pos, rowStart + 79, a );
+    pos = canvas.put( pos, '*', ( a & 0xF0 ) | 0x0E );
+  }
+  canvas.fillTo( pos, rowStart + Cols, a );
+}
+
+void GameListView::drawRows( const ListCursor &cursor ) {
+  drawHeaderRow();
   for ( int d = 0; d < cursor.rows(); d++ ) {
     int i = cursor.top() + d;
-    unsigned char a = AttrRow;
-    pos = rowStart = Canvas::at( 2 + d, 0 );
     if ( i < cursor.count() ) {
-      const Game &game = library_.at( visible_.games[i] );
-      bool selected = i == cursor.sel();
-      if ( selected ) a = AttrSelected;
-      pos = column( canvas, pos, rowStart, ColTitle, game.title, WidthTitle, a );
-      pos = column( canvas, pos, rowStart, ColGenre, game.field( FieldGenre ), WidthGenre, selected ? a : 0x1B );
-      pos = column( canvas, pos, rowStart, ColYear, game.field( FieldYear ), WidthYear, selected ? a : 0x1E );
-      pos = column( canvas, pos, rowStart, ColFolder, game.folder, WidthFolder, selected ? a : 0x17 );
-      if ( game.isFavorite() ) {
-        pos = canvas.fillTo( pos, rowStart + 79, a );
-        pos = canvas.put( pos, '*', ( a & 0xF0 ) | 0x0E );
-      }
+      drawGameRow( 2 + d, library_.at( visible_.games[i] ), i == cursor.sel() );
     }
-    canvas.fillTo( pos, rowStart + Cols, a );
+    else {
+      int rowStart = Canvas::at( 2 + d, 0 );
+      frame_.canvas().fillTo( rowStart, rowStart + Cols, AttrRow );
+    }
   }
-  if ( cursor.count() == 0 ) canvas.textAt( 3, 3, NoMatch, 70, 0x17 );
+  if ( cursor.count() == 0 ) frame_.canvas().textAt( 3, 3, NoMatch, 70, 0x17 );
 }
 
 void GameListView::draw( const ListCursor &cursor ) {

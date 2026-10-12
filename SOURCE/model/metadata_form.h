@@ -44,6 +44,10 @@ private:
   };
 
   void loadValue( int field, const char *v, int len );
+  void detectChanges( char *state ) const;
+  char *writeNewHeader( char *d ) const;
+  char *mergeWithRaw( char *d, char *state ) const;
+  char *appendRemainingFields( char *d, const char *state ) const;
 
   char values_[ValuesSize];
   char original_[ValuesSize];

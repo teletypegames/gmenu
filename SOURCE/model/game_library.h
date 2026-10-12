@@ -11,7 +11,7 @@
 
 class GameLibrary {
 public:
-  enum { Capacity = 600 };
+  enum { Capacity = 600, RecordsSize = 60000 };
 
   GameLibrary();
   ~GameLibrary();
@@ -28,12 +28,16 @@ public:
   /* The game of a folder name, or -1. */
   int find( const char *folder ) const;
   void sort( int order );
+  /* A record buffer from the pool; NULL when the pool is full. */
+  char *allocRecord( unsigned len );
 
 private:
   GameLibrary( const GameLibrary & );
   GameLibrary &operator=( const GameLibrary & );
 
   Game *games_;
+  char *records_;
+  unsigned recordsUsed_;
   int count_;
   int order_[Capacity];
 };

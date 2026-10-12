@@ -32,6 +32,7 @@ private:
 
   FileSystem &fs_;
   const Locations &where_;
+  GameLibrary *library_;
   char indexPath_[96];
   IndexFile index_;
   unsigned char stamp_[StampSize];

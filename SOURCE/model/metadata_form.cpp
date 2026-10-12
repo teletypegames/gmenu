@@ -139,39 +139,54 @@ static char *putField( char *d, int field, const char *v ) {
   return d;
 }
 
-unsigned MetadataForm::write( char *out ) const {
-  enum { Unchanged, Changed, Written };
-  char state[FormFieldCount];
-  char *d = out;
+enum { Unchanged, Changed, Written };
+
+void MetadataForm::detectChanges( char *state ) const {
   for ( int f = 0; f < FormFieldCount; f++ ) {
     state[f] = strcmp( values_ + offsetOf( f ), original_ + offsetOf( f ) ) ? Changed : Unchanged;
   }
-  if ( raw_ == NULL ) {
-    strcpy( d, "[GAME]\r\n" );
-    d += strlen( d );
-  }
-  else {
-    IniScanner scanner( raw_ );
-    IniLine line;
-    memcpy( d, raw_, scanner.body() - raw_ );
-    d += scanner.body() - raw_;
-    while ( scanner.next( line ) ) {
-      int f = fieldOf( line );
-      if ( f >= 0 && state[f] != Unchanged ) {
-        if ( state[f] == Changed ) {
-          state[f] = Written;
-          d = putField( d, f, values_ + offsetOf( f ) );
-        }
-        continue;
+}
+
+char *MetadataForm::writeNewHeader( char *d ) const {
+  strcpy( d, "[GAME]\r\n" );
+  return d + strlen( d );
+}
+
+char *MetadataForm::mergeWithRaw( char *d, char *state ) const {
+  IniScanner scanner( raw_ );
+  IniLine line;
+  memcpy( d, raw_, scanner.body() - raw_ );
+  d += scanner.body() - raw_;
+  while ( scanner.next( line ) ) {
+    int f = fieldOf( line );
+    if ( f >= 0 && state[f] != Unchanged ) {
+      if ( state[f] == Changed ) {
+        state[f] = Written;
+        d = putField( d, f, values_ + offsetOf( f ) );
       }
-      memcpy( d, line.begin, line.end - line.begin );
-      d += line.end - line.begin;
-      *d++ = '\r';
-      *d++ = '\n';
+      continue;
     }
+    memcpy( d, line.begin, line.end - line.begin );
+    d += line.end - line.begin;
+    *d++ = '\r';
+    *d++ = '\n';
   }
+  return d;
+}
+
+char *MetadataForm::appendRemainingFields( char *d, const char *state ) const {
   for ( int f = 0; f < FormFieldCount; f++ ) {
     if ( state[f] == Changed ) d = putField( d, f, values_ + offsetOf( f ) );
   }
+  return d;
+}
+
+unsigned MetadataForm::write( char *out ) const {
+  char state[FormFieldCount];
+  detectChanges( state );
+  char *d = out;
+  if ( raw_ == NULL ) d = writeNewHeader( d );
+  else d = mergeWithRaw( d, state );
+  d = appendRemainingFields( d, state );
   return d - out;
 }

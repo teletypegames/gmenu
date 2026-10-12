@@ -10,15 +10,19 @@ const char *sortOrderName( int order ) {
   return names[order];
 }
 
-GameLibrary::GameLibrary() : games_( NULL ), count_( 0 ) {}
+GameLibrary::GameLibrary() : games_( NULL ), records_( NULL ), recordsUsed_( 0 ), count_( 0 ) {}
 
 GameLibrary::~GameLibrary() {
+  free( records_ );
   free( games_ );
 }
 
 bool GameLibrary::allocate() {
   games_ = (Game *)calloc( Capacity, sizeof( Game ) );
-  return games_ != NULL;
+  if ( games_ == NULL ) return false;
+  records_ = (char *)malloc( RecordsSize );
+  if ( records_ == NULL ) { free( games_ ); games_ = NULL; return false; }
+  return true;
 }
 
 int GameLibrary::count() const {
@@ -38,10 +42,18 @@ const Game &GameLibrary::at( int g ) const {
 }
 
 int GameLibrary::add( const char *folder ) {
+  if ( isFull() ) return count_ - 1;
   int g = count_++;
   order_[g] = g;
   memcpy( games_[g].folder, folder, FolderSize );
   return g;
+}
+
+char *GameLibrary::allocRecord( unsigned len ) {
+  if ( recordsUsed_ + len > RecordsSize ) return NULL;
+  char *p = records_ + recordsUsed_;
+  recordsUsed_ += len;
+  return p;
 }
 
 int GameLibrary::ordered( int i ) const {

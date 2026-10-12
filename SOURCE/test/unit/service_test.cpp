@@ -57,7 +57,7 @@ struct Shelf {
       Game &g = library.at( library.add( folders[i] ) );
       Metadata m;
       m.parse( inis[i] );
-      m.storeRecord( g );
+      m.storeRecord( g, library );
       m.applyTitle( g );
     }
     games.restore();

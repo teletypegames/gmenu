@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include <string.h>
 
 #include "game.h"
+#include "game_library.h"
 #include "metadata.h"
 #include "../lib/core/ini.h"
 #include "../lib/core/str.h"
@@ -56,11 +56,11 @@ void Metadata::applyTitle( Game &game ) const {
   setTitle( game, values_[KeyName], lengths_[KeyName] );
 }
 
-void Metadata::storeRecord( Game &game ) {
+void Metadata::storeRecord( Game &game, GameLibrary &library ) {
   unsigned sum = 0;
   for ( int k = 1; k < KeyCount; k++ ) sum += lengths_[k];
   if ( sum == 0 ) return;
-  char *r = (char *)malloc( sum + KeyCount - 1 );
+  char *r = library.allocRecord( sum + KeyCount - 1 );
   if ( r == NULL ) return;
   game.record = r;
   for ( int k = 1; k < KeyCount; k++ ) {

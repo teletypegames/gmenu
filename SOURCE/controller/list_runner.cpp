@@ -93,6 +93,26 @@ void ListRunner::jumpTo( char c ) {
   }
 }
 
+ListRunner::Step ListRunner::handleRowClick( int row, unsigned &key ) {
+  if ( !behavior_->gameList ) {
+    cursor_->place( row, cursor_->top() );
+    page_->draw( *cursor_ );
+    return StepSelected;
+  }
+  if ( input_.doubleClick() ) {
+    cursor_->place( row, cursor_->top() );
+    key = InputDoubleClick;
+    return StepKey;
+  }
+  if ( row == cursor_->sel() ) {
+    if ( !input_.waitSecondClick() ) return selected();
+    key = InputDoubleClick;
+    return StepKey;
+  }
+  cursor_->select( row );
+  return StepRedraw;
+}
+
 ListRunner::Step ListRunner::handleClick( unsigned &key ) {
   int sel = cursor_->sel(), rows = cursor_->rows(), count = cursor_->count();
   if ( input_.row() == HeaderRow ) return moveTo( clampIndex( sel - rows, count ) );
@@ -102,21 +122,5 @@ ListRunner::Step ListRunner::handleClick( unsigned &key ) {
   if ( behavior_->paneEnd && input_.col() < behavior_->paneEnd ) return StepWait;
   r += cursor_->top();
   if ( r >= count ) return StepWait;
-  if ( !behavior_->gameList ) {
-    cursor_->place( r, cursor_->top() );
-    page_->draw( *cursor_ );
-    return StepSelected;
-  }
-  if ( input_.doubleClick() ) {
-    cursor_->place( r, cursor_->top() );
-    key = InputDoubleClick;
-    return StepKey;
-  }
-  if ( r == sel ) {
-    if ( !input_.waitSecondClick() ) return selected();
-    key = InputDoubleClick;
-    return StepKey;
-  }
-  cursor_->select( r );
-  return StepRedraw;
+  return handleRowClick( r, key );
 }

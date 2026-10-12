@@ -10,7 +10,11 @@
 #include "../../model/metadata.h"
 #include "../../model/metadata_form.h"
 
+static GameLibrary testPool;
+static bool testPoolReady;
+
 static void makeGame( Game &game, const char *folder, const char *ini ) {
+  if ( !testPoolReady ) { testPool.allocate(); testPoolReady = true; }
   memset( &game, 0, sizeof( game ) );
   strcpy( game.folder, folder );
   strcpy( game.title, folder );
@@ -18,7 +22,7 @@ static void makeGame( Game &game, const char *folder, const char *ini ) {
   strcpy( text, ini );
   Metadata metadata;
   metadata.parse( text );
-  metadata.storeRecord( game );
+  metadata.storeRecord( game, testPool );
   if ( metadata.hasName() ) metadata.applyTitle( game );
 }
 

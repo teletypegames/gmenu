@@ -29,6 +29,21 @@ static unsigned char mapCp( unsigned cp ) {
   return '?';
 }
 
+static unsigned decodeUtf8( unsigned char *s, unsigned char lead, int &advance ) {
+  if ( lead < 0xE0 ) {
+    advance = 1;
+    return ( ( lead & 0x1F ) << 6 ) | ( s[0] & 0x3F );
+  }
+  if ( lead < 0xF0 ) {
+    if ( ( s[1] & 0xC0 ) != 0x80 ) { advance = 0; return 0; }
+    advance = 2;
+    return ( (unsigned)( lead & 0x0F ) << 12 ) | ( ( s[0] & 0x3F ) << 6 ) | ( s[1] & 0x3F );
+  }
+  advance = 0;
+  while ( ( *s & 0xC0 ) == 0x80 ) { s++; advance++; }
+  return 0xFFFD;
+}
+
 unsigned utf8To437( char *buf ) {
   unsigned char *s = (unsigned char *)buf;
   unsigned char *d = s;
@@ -38,23 +53,11 @@ unsigned utf8To437( char *buf ) {
       *d++ = c;
       continue;
     }
-    if ( c < 0xE0 ) {
-      *d++ = mapCp( ( ( c & 0x1F ) << 6 ) | ( s[0] & 0x3F ) );
-      s++;
-    }
-    else if ( c < 0xF0 ) {
-      if ( ( s[1] & 0xC0 ) != 0x80 ) {
-        *d++ = c;
-        continue;
-      }
-      unsigned cp = ( (unsigned)( c & 0x0F ) << 12 ) | ( ( s[0] & 0x3F ) << 6 ) | ( s[1] & 0x3F );
-      s += 2;
-      if ( cp != 0xFEFF ) *d++ = mapCp( cp );
-    }
-    else {
-      while ( ( *s & 0xC0 ) == 0x80 ) s++; /* outside the BMP */
-      *d++ = '?';
-    }
+    int skip;
+    unsigned cp = decodeUtf8( s, c, skip );
+    if ( skip == 0 ) { *d++ = c; continue; }
+    s += skip;
+    if ( cp != 0xFEFF ) *d++ = ( cp == 0xFFFD ) ? '?' : mapCp( cp );
   }
   *d = 0;
   return d - (unsigned char *)buf;

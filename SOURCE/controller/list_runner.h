@@ -44,6 +44,7 @@ private:
   Step handleKey( unsigned key );
   Step handleWheel( unsigned key );
   Step handleClick( unsigned &key );
+  Step handleRowClick( int row, unsigned &key );
   Step moveTo( int index );
   Step selected();
   void jumpTo( char c );

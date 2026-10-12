@@ -9,6 +9,7 @@
 class Frame;
 class GameLibrary;
 class ListCursor;
+struct Game;
 struct Locations;
 struct Session;
 struct VisibleGames;
@@ -21,6 +22,8 @@ public:
 
 private:
   void title( char *out ) const;
+  void drawHeaderRow();
+  void drawGameRow( int row, const Game &game, bool selected );
   void drawRows( const ListCursor &cursor );
 
   Frame &frame_;

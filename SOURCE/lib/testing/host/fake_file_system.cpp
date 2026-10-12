@@ -187,18 +187,22 @@ bool FakeFileSystem::exists( const char *path ) {
   return fileIndex( key ) >= 0 || folderIndex( key ) >= 0;
 }
 
+int FakeFileSystem::allocHandle( int fileIdx, bool writing ) {
+  for ( int h = 0; h < MaxHandles; h++ ) {
+    if ( handles_[h].used ) continue;
+    Handle open = { fileIdx, 0, true, writing };
+    handles_[h] = open;
+    return h;
+  }
+  return -1;
+}
+
 int FakeFileSystem::openRead( const char *path ) {
   char key[PathSize];
   keyOf( path, key );
   int f = fileIndex( key );
   if ( f < 0 ) return -1;
-  for ( int h = 0; h < MaxHandles; h++ ) {
-    if ( handles_[h].used ) continue;
-    Handle open = { f, 0, true, false };
-    handles_[h] = open;
-    return h;
-  }
-  return -1;
+  return allocHandle( f, false );
 }
 
 int FakeFileSystem::create( const char *path ) {
@@ -206,14 +210,8 @@ int FakeFileSystem::create( const char *path ) {
   keyOf( path, key );
   int f = fileIndex( key );
   if ( ( f >= 0 && files_[f].locked ) || !parentExists( key ) ) return -1;
-  for ( int h = 0; h < MaxHandles; h++ ) {
-    if ( handles_[h].used ) continue;
-    f = newFile( key );
-    Handle open = { f, 0, true, true };
-    handles_[h] = open;
-    return h;
-  }
-  return -1;
+  f = newFile( key );
+  return allocHandle( f, true );
 }
 
 int FakeFileSystem::read( int handle, void *buf, unsigned size ) {
@@ -272,20 +270,25 @@ bool FakeFileSystem::makeFolder( const char *path ) {
   return true;
 }
 
-bool FakeFileSystem::removeFolder( const char *path ) {
-  char key[PathSize], parent[PathSize];
-  keyOf( path, key );
-  int d = folderIndex( key );
-  if ( d < 0 ) return false;
+bool FakeFileSystem::hasChildren( const char *key ) const {
+  char parent[PathSize];
   for ( int i = 0; i < MaxFiles; i++ ) {
     if ( !files_[i].used ) continue;
     parentOf( files_[i].path, parent );
-    if ( strcmp( parent, key ) == 0 ) return false;
+    if ( strcmp( parent, key ) == 0 ) return true;
   }
   for ( int i = 0; i < folderCount_; i++ ) {
     parentOf( folders_[i], parent );
-    if ( strcmp( parent, key ) == 0 ) return false;
+    if ( strcmp( parent, key ) == 0 ) return true;
   }
+  return false;
+}
+
+bool FakeFileSystem::removeFolder( const char *path ) {
+  char key[PathSize];
+  keyOf( path, key );
+  int d = folderIndex( key );
+  if ( d < 0 || hasChildren( key ) ) return false;
   memmove( folders_[d], folders_[d + 1], ( folderCount_ - d - 1 ) * PathSize );
   folderCount_--;
   return true;
