@@ -54,7 +54,7 @@ The rules of the code (C++98 for Open Watcom, interfaces, names, format) are in 
 
 ## Installation
 
-1. Copy the `GMENU` folder to the DOS drive, for example to `C:\GMENU\`. It can be in any folder (for example `C:\TOOLS\GMENU\`). The menu needs only `GMENU.BAT` and `GMENUPRG.EXE`, and `GMEDIT.EXE` for editing `METADATA.INI` files.
+1. Copy the `GMENU` folder to the DOS drive, for example to `C:\APPS\GMENU\` (the default, where DOSINST installs it). It can be in any folder (for example `C:\TOOLS\GMENU\`); then also change `C:\APPS\GMENU` in `GMENU.BAT` (see below). The menu needs only `GMENU.BAT` and `GMENUPRG.EXE`, and `GMEDIT.EXE` for editing `METADATA.INI` files.
 2. Put the games in one common directory. Give each game its own folder, and put a `METADATA.INI` (or at least a `NAME.TXT`) in each folder:
    ```
    C:\COLLECT\
@@ -88,7 +88,7 @@ The rules of the code (C++98 for Open Watcom, interfaces, names, format) are in 
    [autoexec]
    mount c /Users/.../Dosbox
    c:
-   path Z:\;C:\GMENU
+   path Z:\;C:\APPS\GMENU
    gmenu
    ```
 
@@ -97,7 +97,7 @@ The rules of the code (C++98 for Open Watcom, interfaces, names, format) are in 
 In `GMENU.BAT`, the last argument on the `GMENUPRG.EXE` line is the game directory:
 
 ```bat
-%0PRG.EXE /B \COLLECT
+%GMENU%PRG.EXE /B \COLLECT
 ```
 
 Add `/A` (for example `/B /A \COLLECT`) to show all files of a game on the detail page by default, not only the executables. (Tab switches between the two at any time.)
@@ -106,7 +106,7 @@ You can change it, for example to `\MYGAMES` or `D:\GAMES`. If you give another 
 
 ## Usage
 
-Start the menu with `gmenu` (if its folder is in the PATH), or with its full path, for example `C:\GMENU\GMENU`. Do not type the `.BAT` extension: `GMENU.BAT` finds `GMENUPRG.EXE` and `GMENURUN.BAT` from the name it was started with.
+Start the menu with `gmenu` (if its folder is in the PATH), or with its full path, for example `C:\APPS\GMENU\GMENU`. `GMENU.BAT` finds `GMENUPRG.EXE` and `GMENURUN.BAT` from the name it was started with, so the folder can be anywhere. If it is started with the `.BAT` extension (for example `GMENU.BAT`, or from a file manager such as Total Commander), it cannot tell its folder from that name, and runs them from `C:\APPS\GMENU` instead (the `set GMENU=C:\APPS\GMENU\GMENU` line in `GMENU.BAT`: change it if the menu is in another folder).
 
 F1 shows the keys in a table (↑ ↓, PgUp/PgDn or the wheel scroll it, Esc closes it).
 
@@ -185,7 +185,7 @@ Back in the menu the game shows its new data (and a new one drops out of the Shi
 
 `GMENUPRG.EXE` is not in memory while a game runs, so the game gets all the free memory:
 
-1. `GMENU.BAT` runs `GMENUPRG.EXE /B <directory>` (as `%0PRG.EXE`, so `C:\GMENU\GMENU` runs `C:\GMENU\GMENUPRG.EXE`).
+1. `GMENU.BAT` runs `GMENUPRG.EXE /B <directory>` (as `%0PRG.EXE`, so `C:\APPS\GMENU\GMENU` runs `C:\APPS\GMENU\GMENUPRG.EXE`; started as `GMENU.BAT`, it runs `C:\APPS\GMENU\GMENUPRG.EXE`).
 2. When you choose a game, the program writes `GMENURUN.BAT` into its own folder and exits with code 0. When you quit, the exit code is 1, and on an error it is 2. `GMENURUN.BAT` looks like this:
    ```bat
    @echo off
@@ -197,7 +197,7 @@ Back in the menu the game shows its new data (and a new one drops out of the Shi
    ```
 3. `GMENU.BAT` runs it (with `call %0RUN.BAT`) and then starts the menu again.
 
-Ctrl+E works the same way: `GMENURUN.BAT` runs `GMEDIT.EXE` (from the folder of `GMENUPRG.EXE`) with the game's folder, for example `C:\GMENU\GMEDIT.EXE /B C:\COLLECT\DOOM` (`/B`: an error message waits for a key, so that the menu does not clear it at once).
+Ctrl+E works the same way: `GMENURUN.BAT` runs `GMEDIT.EXE` (from the folder of `GMENUPRG.EXE`) with the game's folder, for example `C:\APPS\GMENU\GMEDIT.EXE /B C:\COLLECT\DOOM` (`/B`: an error message waits for a key, so that the menu does not clear it at once).
 
 The `/B` switch tells the program that `GMENU.BAT` started it. Without the switch, the program does not open the menu. It only prints that you must use `GMENU.BAT`. If it ran on its own, it would write `GMENURUN.BAT`, but nothing would start the game.
 
@@ -239,7 +239,7 @@ git push origin v1.0.0
 - Titles can be up to 50 characters long, genres 24, year and players 10, descriptions 2000, `RUN` / `SETUP` / `ARGS` 60. `METADATA.INI` is read up to 4 KB.
 - The players filter lists the counts from 1 to 16.
 - The screen uses code page 437 (see the UTF-8 conversion above).
-- Start the menu without the `.BAT` extension (`GMENU`, not `GMENU.BAT`).
+- Started with the `.BAT` extension, `GMENU.BAT` runs the menu from `C:\APPS\GMENU` (change it in `GMENU.BAT` if the menu is elsewhere).
 
 ## License
 
