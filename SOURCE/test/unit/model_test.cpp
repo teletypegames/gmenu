@@ -14,7 +14,10 @@ static GameLibrary testPool;
 static bool testPoolReady;
 
 static void makeGame( Game &game, const char *folder, const char *ini ) {
-  if ( !testPoolReady ) { testPool.allocate(); testPoolReady = true; }
+  if ( !testPoolReady ) {
+    testPool.allocate();
+    testPoolReady = true;
+  }
   memset( &game, 0, sizeof( game ) );
   strcpy( game.folder, folder );
   strcpy( game.title, folder );

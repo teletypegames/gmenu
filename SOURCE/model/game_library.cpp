@@ -21,7 +21,11 @@ bool GameLibrary::allocate() {
   games_ = (Game *)calloc( Capacity, sizeof( Game ) );
   if ( games_ == NULL ) return false;
   records_ = (char *)malloc( RecordsSize );
-  if ( records_ == NULL ) { free( games_ ); games_ = NULL; return false; }
+  if ( records_ == NULL ) {
+    free( games_ );
+    games_ = NULL;
+    return false;
+  }
   return true;
 }
 
