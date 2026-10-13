@@ -27,7 +27,8 @@ StaFileRepository::~StaFileRepository() {
 }
 
 void StaFileRepository::load( GameLibrary &library ) {
-  others_ = (unsigned char *)malloc( RecordSize * MaxRecords );
+  count_ = 0;
+  if ( others_ == NULL ) others_ = (unsigned char *)malloc( RecordSize * MaxRecords );
   if ( others_ == NULL ) return;
   int n = readFile( fs_, path_, others_, RecordSize * MaxRecords );
   if ( n < 0 ) return;

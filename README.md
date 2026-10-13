@@ -21,7 +21,7 @@ GMENU is a small DOS menu program (about 45 KB). It lists the game folders in a 
 | `GMENU.SEL` | *Created at runtime:* the last selected game, the search text, the filters, the sort order, the Tab setting and the recently played games. |
 | `GMENU.FAV` | *Created at runtime:* the favorite games (one folder name per line). |
 | `GMENU.STA` | *Created at runtime:* how many times and when each game was started. |
-| `GMENU.IDX` | *Created at runtime:* a cache of the data read from `METADATA.INI` / `NAME.TXT`, so the menu starts quickly. You can delete it at any time. |
+| `GMENU.IDX` | *Created at runtime:* the cache of the game folders and of the data read from their `METADATA.INI` / `NAME.TXT`: the menu starts from it without scanning the folders. Ctrl+F scans them again; you can also delete it at any time. |
 
 The runtime files are created in the folder of `GMENUPRG.EXE`.
 
@@ -132,6 +132,7 @@ F1 shows the keys in a table (↑ ↓, PgUp/PgDn or the wheel scroll it, Esc clo
 | F8 | Recently played games (the last 10, newest first); Enter opens the game's detail page |
 | F9 | Sort order: title → year → genre → most played (games without the value come last; the order is remembered) |
 | F10 | Select a random game of the list |
+| Ctrl+F | Scan the game folders again and rebuild the `GMENU.IDX` cache (after you added, removed or renamed game folders) |
 | Esc or right click | The first press clears the search, the next one the filters, the last one quits |
 | Click on the header / footer | Page up / down |
 
@@ -201,7 +202,7 @@ Ctrl+E works the same way: `GMENURUN.BAT` runs `GMEDIT.EXE` (from the folder of 
 
 The `/B` switch tells the program that `GMENU.BAT` started it. Without the switch, the program does not open the menu. It only prints that you must use `GMENU.BAT`. If it ran on its own, it would write `GMENURUN.BAT`, but nothing would start the game.
 
-On start, the program checks each game's `METADATA.INI` (and `NAME.TXT`) date, time and size. If they did not change, the data comes from `GMENU.IDX` and the files are not read; otherwise they are read again and `GMENU.IDX` is rewritten.
+On start, the menu takes the games from `GMENU.IDX` and does not look at the game folders, so it starts quickly on a slow machine with many games too. Only the selected game (the one you last played or edited with Ctrl+E) is checked: if its `METADATA.INI` (or `NAME.TXT`) changed, it is read again. A scan (the first start, when `GMENU.IDX` is missing or belongs to another game directory, or Ctrl+F) lists the folders and checks each game's `METADATA.INI` (and `NAME.TXT`) date, time and size: if they did not change, the data comes from `GMENU.IDX`, otherwise the files are read again; then `GMENU.IDX` is written again. The scan shows how many folders it has read. New, removed or renamed game folders appear after Ctrl+F.
 
 ## Tests
 
@@ -235,7 +236,7 @@ git push origin v1.0.0
 
 ## Limitations
 
-- At most 600 game folders and 600 files per folder. The recent list keeps the last 10 games.
+- The number of game folders is limited only by the free memory (about 100 bytes per game plus its data from `METADATA.INI`; at most 16000). At most 600 files per game folder are listed. The recent list keeps the last 10 games, the statistics the last 1000 played games.
 - Titles can be up to 50 characters long, genres 24, year and players 10, descriptions 2000, `RUN` / `SETUP` / `ARGS` 60. `METADATA.INI` is read up to 4 KB.
 - The players filter lists the counts from 1 to 16.
 - The screen uses code page 437 (see the UTF-8 conversion above).

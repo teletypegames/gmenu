@@ -1,27 +1,36 @@
 #include <string.h>
 
 #include "folder_game_repository.h"
+#include "../../lib/core/progress.h"
 #include "../../lib/core/str.h"
 #include "../../lib/core/text.h"
 #include "../../lib/platform/file_system.h"
 #include "../../model/game_library.h"
 #include "../../model/locations.h"
 
+/* The folders of the scan; every 10th is counted on the progress. */
 class GameFolders : public DirVisitor {
 public:
-  GameFolders( FolderGameRepository &repository, GameLibrary &library )
-    : repository_( repository ), library_( library ) {}
+  GameFolders( FolderGameRepository &repository, GameLibrary &library, Progress &progress )
+    : repository_( repository ), library_( library ), progress_( progress ) {}
 
   bool visit( const DirEntry &entry ) {
     if ( !entry.isFolder() || entry.name[0] == '.' ) return true;
-    if ( library_.isFull() ) return false;
-    repository_.readGame( library_.at( library_.add( entry.name ) ) );
+    int g = library_.add( entry.name );
+    if ( g < 0 ) return false;
+    repository_.readGame( library_.at( g ) );
+    if ( library_.count() % 10 == 0 ) {
+      char text[40] = "Scanning the game folders: ";
+      numStr( text + strlen( text ), library_.count() );
+      progress_.report( text );
+    }
     return true;
   }
 
 private:
   FolderGameRepository &repository_;
   GameLibrary &library_;
+  Progress &progress_;
 };
 
 FolderGameRepository::FolderGameRepository( FileSystem &fs, const Locations &where )
@@ -29,15 +38,41 @@ FolderGameRepository::FolderGameRepository( FileSystem &fs, const Locations &whe
   where.progFile( "GMENU.IDX", indexPath_ );
 }
 
-void FolderGameRepository::load( GameLibrary &library ) {
+void FolderGameRepository::load( GameLibrary &library, Progress &progress ) {
+  if ( !index_.loadAll( library ) ) scan( library, progress );
+}
+
+void FolderGameRepository::scan( GameLibrary &library, Progress &progress ) {
   library_ = &library;
+  library.clear();
+  progress.report( "Scanning the game folders..." );
   char pattern[96];
   strcpy( pattern, where_.gameDir );
   strcat( pattern, "\\*.*" );
   index_.open();
-  GameFolders folders( *this, library );
+  GameFolders folders( *this, library, progress );
   fs_.list( pattern, AttrFolder, folders );
   index_.finish( library );
+}
+
+bool FolderGameRepository::recheck( GameLibrary &library, int g ) {
+  Game &game = library.at( g );
+  unsigned char stamp[StampSize];
+  fileStamp( game, MetadataFile, stamp );
+  memset( stamp + 8, 0, 8 );
+  if ( game.flags & GameTitleNotFromMetadata ) fileStamp( game, NameFile, stamp + 8 );
+  if ( memcmp( stamp, game.stamp, StampSize ) == 0 ) return false;
+  library_ = &library;
+  game.flags &= GameFavorite;
+  game.record = NULL;
+  titleFromNameFile_ = false;
+  strcpy( game.title, game.folder );
+  memcpy( stamp_, stamp, 8 );
+  memset( stamp_ + 8, 0, 8 );
+  fromFiles( game );
+  keepStamp( game );
+  index_.save( library );
+  return true;
 }
 
 void FolderGameRepository::fileStamp( const Game &game, const char *name, unsigned char *out ) {

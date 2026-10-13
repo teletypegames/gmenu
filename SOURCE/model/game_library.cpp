@@ -10,53 +10,78 @@ const char *sortOrderName( int order ) {
   return names[order];
 }
 
-GameLibrary::GameLibrary() : games_( NULL ), records_( NULL ), recordsUsed_( 0 ), count_( 0 ) {}
+GameLibrary::GameLibrary() : chunk_( 0 ), chunkUsed_( 0 ), order_( NULL ), orderCapacity_( 0 ), count_( 0 ) {
+  memset( blocks_, 0, sizeof( blocks_ ) );
+  memset( chunks_, 0, sizeof( chunks_ ) );
+}
 
 GameLibrary::~GameLibrary() {
-  free( records_ );
-  free( games_ );
+  for ( int b = 0; b < MaxBlocks; b++ ) free( blocks_[b] );
+  for ( int c = 0; c < MaxChunks; c++ ) free( chunks_[c] );
+  free( order_ );
 }
 
 bool GameLibrary::allocate() {
-  games_ = (Game *)calloc( Capacity, sizeof( Game ) );
-  if ( games_ == NULL ) return false;
-  records_ = (char *)malloc( RecordsSize );
-  if ( records_ == NULL ) {
-    free( games_ );
-    games_ = NULL;
-    return false;
-  }
-  return true;
+  blocks_[0] = (Game *)malloc( BlockGames * sizeof( Game ) );
+  chunks_[0] = (char *)malloc( ChunkSize );
+  return blocks_[0] != NULL && chunks_[0] != NULL && growOrder();
+}
+
+void GameLibrary::clear() {
+  count_ = 0;
+  chunk_ = 0;
+  chunkUsed_ = 0;
 }
 
 int GameLibrary::count() const {
   return count_;
 }
 
-bool GameLibrary::isFull() const {
-  return count_ >= Capacity;
-}
-
 Game &GameLibrary::at( int g ) {
-  return games_[g];
+  return blocks_[g / BlockGames][g % BlockGames];
 }
 
 const Game &GameLibrary::at( int g ) const {
-  return games_[g];
+  return blocks_[g / BlockGames][g % BlockGames];
+}
+
+/* The order array twice as big (at most MaxGames). */
+bool GameLibrary::growOrder() {
+  int capacity = orderCapacity_ ? orderCapacity_ * 2 : BlockGames;
+  if ( capacity > MaxGames ) capacity = MaxGames;
+  if ( capacity <= orderCapacity_ ) return false;
+  int *order = (int *)realloc( order_, capacity * sizeof( int ) );
+  if ( order == NULL ) return false;
+  order_ = order;
+  orderCapacity_ = capacity;
+  return true;
 }
 
 int GameLibrary::add( const char *folder ) {
-  if ( isFull() ) return count_ - 1;
+  if ( count_ >= MaxGames ) return -1;
+  if ( count_ == orderCapacity_ && !growOrder() ) return -1;
+  Game *&block = blocks_[count_ / BlockGames];
+  if ( block == NULL ) block = (Game *)malloc( BlockGames * sizeof( Game ) );
+  if ( block == NULL ) return -1;
   int g = count_++;
   order_[g] = g;
-  memcpy( games_[g].folder, folder, FolderSize );
+  Game &game = at( g );
+  memset( &game, 0, sizeof( game ) );
+  memcpy( game.folder, folder, FolderSize );
   return g;
 }
 
 char *GameLibrary::allocRecord( unsigned len ) {
-  if ( recordsUsed_ + len > RecordsSize ) return NULL;
-  char *p = records_ + recordsUsed_;
-  recordsUsed_ += len;
+  if ( len > ChunkSize ) return NULL;
+  if ( chunkUsed_ + len > ChunkSize ) {
+    if ( chunk_ + 1 >= MaxChunks ) return NULL;
+    if ( chunks_[chunk_ + 1] == NULL ) chunks_[chunk_ + 1] = (char *)malloc( ChunkSize );
+    if ( chunks_[chunk_ + 1] == NULL ) return NULL;
+    chunk_++;
+    chunkUsed_ = 0;
+  }
+  char *p = chunks_[chunk_] + chunkUsed_;
+  chunkUsed_ += len;
   return p;
 }
 
@@ -66,7 +91,7 @@ int GameLibrary::ordered( int i ) const {
 
 int GameLibrary::find( const char *folder ) const {
   for ( int i = 0; i < count_; i++ ) {
-    if ( cmpi( games_[order_[i]].folder, folder ) == 0 ) return order_[i];
+    if ( cmpi( at( order_[i] ).folder, folder ) == 0 ) return order_[i];
   }
   return -1;
 }

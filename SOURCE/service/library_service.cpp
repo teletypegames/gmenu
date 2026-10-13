@@ -40,10 +40,17 @@ void LibraryService::saveSession() {
 
 void LibraryService::applyFilter() {
   visible_.count = 0;
-  for ( int i = 0; i < library_.count(); i++ ) {
+  int n = library_.count();
+  while ( !visible_.reserve( n ) ) n /= 2;
+  for ( int i = 0; i < library_.count() && visible_.count < n; i++ ) {
     int g = library_.ordered( i );
     if ( session_.criteria.matches( library_.at( g ) ) ) visible_.games[visible_.count++] = g;
   }
+}
+
+void LibraryService::reorder() {
+  sort();
+  refilter();
 }
 
 void LibraryService::refilter() {

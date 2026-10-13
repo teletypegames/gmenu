@@ -1,16 +1,16 @@
  GMenu Launcher  (\COLLECT)                                         1/8
  Tit╔═ Keys ═══════════════════════════════════════════════════════════↑═══╗
- Alp║   Enter, click     open the game page                                ║
- Arv║   Ctrl+Enter       play (or double click)                            ║
- Bra║   Ctrl+S           run the setup                                     ║
- Cha║   Ctrl+E           edit METADATA.INI                                 ║
- DEL║   Typing           search                                            ║
- Ech║   F2  F3  F4       filter: genre, year, players                      ║
- Fox║   F5               clear the filters                                 ║
- Hot║   F6  F7           favorite, favorites only                          ║
-    ║   Shift+F7         no METADATA.INI only                              ║
+ Alp║   Ctrl+Enter       play (or double click)                            ║
+ Arv║   Ctrl+S           run the setup                                     ║
+ Bra║   Ctrl+E           edit METADATA.INI                                 ║
+ Cha║   Typing           search                                            ║
+ DEL║   F2  F3  F4       filter: genre, year, players                      ║
+ Ech║   F5               clear the filters                                 ║
+ Fox║   F6  F7           favorite, favorites only                          ║
+ Hot║   Shift+F7         no METADATA.INI only                              ║
     ║   F8               recently played                                   ║
     ║   F9  F10          sort order, random game                           ║
+    ║   Ctrl+F           scan the game folders again                       ║
     ║   Esc              clear search, filters, quit                       ║
     ║                                                                      ║
     ║  Game page ────────────────────────────────────────────────────────  ║

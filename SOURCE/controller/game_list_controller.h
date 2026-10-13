@@ -3,7 +3,8 @@
    page, Ctrl+Enter (or a double click) plays, Ctrl+S runs the setup, Ctrl+E edits the
    METADATA.INI, F1 help, F2-F4 filters, F5 clears them, F6 / F7 favorite / favorites
    only, Shift+F7 without METADATA.INI only, F8 recently played, F9 sort order, F10 a
-   random game. Esc clears the search, then the filters, then quits.
+   random game, Ctrl+F scans the game folders again. Esc clears the search, then the
+   filters, then quits.
 */
 
 #ifndef GMENU_CONTROLLER_GAME_LIST_CONTROLLER_H

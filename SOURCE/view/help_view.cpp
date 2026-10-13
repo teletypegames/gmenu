@@ -26,6 +26,7 @@ static const struct {
               { "Shift+F7", "no METADATA.INI only" },
               { "F8", "recently played" },
               { "F9  F10", "sort order, random game" },
+              { "Ctrl+F", "scan the game folders again" },
               { "Esc", "clear search, filters, quit" },
               { NULL, NULL },
               { NULL, "Game page" },

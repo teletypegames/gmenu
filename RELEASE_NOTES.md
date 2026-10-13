@@ -2,7 +2,15 @@ GMENU – a small game menu for DOS / DOSBox.
 
 **Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\APPS\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, copy `GMENUPRG.EXE`, `GMEDIT.EXE` and the new `GMENU.BAT` into its folder (keep your game directory in `GMENU.BAT`). See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
 
-**New in 2.2.2:**
+**New in 2.3.0:**
+
+- No limit of 600 game folders any more: the games are kept in memory blocks allocated as needed, so only the free memory limits them
+- Quick start: the menu takes the games from the `GMENU.IDX` cache and does not scan the game folders (only the selected game is checked, so an edit with Ctrl+E shows at once)
+- Ctrl+F scans the game folders again and rebuilds the cache (after adding, removing or renaming game folders); the scan shows how many folders it has read. It is in the help (F1)
+- `GMENU.IDX` has a new version: the first start after the update scans the folders once
+- To update, copy `GMENUPRG.EXE` (`GMEDIT.EXE` and `GMENU.BAT` did not change)
+
+**2.2.2:**
 
 - The store and the title of the game list call it GMenu Launcher; the folder, `GMENU.BAT` and the programs keep their names. To update, copy `GMENUPRG.EXE`
 

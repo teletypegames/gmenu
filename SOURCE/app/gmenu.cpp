@@ -32,6 +32,7 @@
 #include "../view/help_view.h"
 #include "../view/layout.h"
 #include "../view/picker_view.h"
+#include "../view/scan_view.h"
 
 /* The menu put together: the members are built in this order. */
 struct Gmenu {
@@ -56,6 +57,7 @@ struct Gmenu {
   DetailView detailView;
   PickerView pickerView;
   HelpView helpView;
+  ScanView scanView;
   MenuInput input;
   ListRunner runner;
   HelpController help;
@@ -70,8 +72,9 @@ Gmenu::Gmenu( Machine &m, const Locations &where )
     games( library, session, visible, favorites, sessions, m.clock ),
     launcher( library, session, where, launchers, stats, folderFiles, m.clock ), picker( library ), canvas( m.screen ),
     frame( canvas, m.mouse ), listView( frame, library, session, visible, where ), detailView( frame, where ),
-    pickerView( frame ), helpView( frame ), input( m.keyboard, m.mouse, m.idle, m.clock ), runner( input ),
-    help( helpView, input ), detail( library, session, games, launcher, detailView, runner, help, m.speaker ),
+    pickerView( frame ), helpView( frame ), scanView( frame ), input( m.keyboard, m.mouse, m.idle, m.clock ),
+    runner( input ), help( helpView, input ),
+    detail( library, session, games, launcher, detailView, runner, help, m.speaker ),
     pickers( picker, games, session, visible, pickerView, runner, m.speaker ),
     menu( library, session, visible, games, launcher, listView, runner, detail, pickers, help, m.speaker, files ) {
   visible.rows = GameRows;
@@ -100,25 +103,42 @@ static void restoreScreen( Machine &m ) {
   m.screen.end();
 }
 
+/* The games with their favorites and statistics, and the session; false when there are
+   none. rescan: the folders are scanned, not taken from GMENU.IDX. */
+static bool loadGames( Gmenu &app, bool rescan ) {
+  if ( rescan ) app.gameFolders.scan( app.library, app.scanView );
+  else app.gameFolders.load( app.library, app.scanView );
+  if ( app.library.count() == 0 ) return false;
+  app.favorites.load( app.library );
+  app.stats.load( app.library );
+  app.games.restore();
+  /* the selected game may have just been edited (GMEDIT) */
+  int g = app.visible.current();
+  if ( !rescan && g >= 0 && app.gameFolders.recheck( app.library, g ) ) app.games.reorder();
+  return true;
+}
+
 static int runMenu( Machine &m, Gmenu &app, const Locations &where, const Options &options ) {
   m.screen.begin();
   m.screen.hideCursor();
   m.mouse.detect();
-  app.gameFolders.load( app.library );
-  if ( app.library.count() == 0 ) {
-    restoreScreen( m );
-    m.out.write( "No game folders found in: " );
-    m.out.write( where.gameDir );
-    m.out.write( "\n" );
-    return 2;
+  bool rescan = false;
+  Outcome outcome;
+  for ( ;; ) {
+    if ( !loadGames( app, rescan ) ) {
+      restoreScreen( m );
+      m.out.write( "No game folders found in: " );
+      m.out.write( where.gameDir );
+      m.out.write( "\n" );
+      return 2;
+    }
+    if ( options.allFiles ) app.session.showAll = 1;
+    m.mouse.show();
+    outcome = app.menu.run();
+    app.games.saveSession();
+    if ( outcome != OutcomeRescan ) break;
+    rescan = true;
   }
-  app.favorites.load( app.library );
-  app.stats.load( app.library );
-  app.games.restore();
-  if ( options.allFiles ) app.session.showAll = 1;
-  m.mouse.show();
-  Outcome outcome = app.menu.run();
-  app.games.saveSession();
   restoreScreen( m );
   return outcome == OutcomeLaunch ? 0 : 1;
 }

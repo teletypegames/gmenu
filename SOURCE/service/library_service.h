@@ -23,6 +23,8 @@ public:
 
   /* The list again after the filters changed, keeping the selected game (centered). */
   void refilter();
+  /* Sorted and filtered again (after a game changed), keeping the selected game. */
+  void reorder();
   /* The list again, the selection staying where it is. */
   void applyFilter();
   void addToSearch( char c );

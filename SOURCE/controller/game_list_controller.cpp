@@ -13,6 +13,8 @@
 #include "../view/game_list_view.h"
 #include "../view/layout.h"
 
+enum { KeyCtrlF = 0x06 };
+
 static const ListBehavior Games = { ListFirstRow, true, true, 0, false };
 
 GameListController::GameListController( GameLibrary &library, Session &session, VisibleGames &visible,
@@ -77,6 +79,7 @@ Outcome GameListController::handleKey( unsigned key ) {
 Outcome GameListController::handleText( unsigned char ch, int game ) {
   if ( ch == KeyCtrlS ) return game >= 0 ? setup( game ) : OutcomeBack;
   if ( ch == KeyCtrlE ) return game >= 0 ? detail_.editMetadata( game ) : OutcomeBack;
+  if ( ch == KeyCtrlF ) return OutcomeRescan;
   if ( ch == KeyBackspace ) games_.backspace();
   else if ( ch >= ' ' ) games_.addToSearch( ch );
   return OutcomeBack;

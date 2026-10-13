@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <string.h>
 
 #include "fav_file_repository.h"
@@ -6,31 +5,33 @@
 #include "../../model/game_library.h"
 #include "../../model/locations.h"
 
-static const unsigned FavSize = GameLibrary::Capacity * FolderSize;
-
 FavFileRepository::FavFileRepository( FileSystem &fs, const Locations &where ) : fs_( fs ) {
   where.progFile( "GMENU.FAV", path_ );
 }
 
+static void markFavorite( GameLibrary &library, char *name, int &len ) {
+  if ( len == 0 ) return;
+  name[len] = 0;
+  len = 0;
+  int g = library.find( name );
+  if ( g >= 0 ) library.at( g ).flags |= GameFavorite;
+}
+
+/* The folder names of the file, read a piece at a time (a name split between two pieces
+   is joined). */
 void FavFileRepository::load( GameLibrary &library ) {
-  char *buf = (char *)malloc( FavSize );
-  if ( buf == NULL ) return;
-  int n = readText( fs_, path_, buf, FavSize );
-  for ( char *s = buf; n > 0 && *s; ) {
-    if ( (unsigned char)*s <= ' ' ) {
-      s++;
-      continue;
+  int h = fs_.openRead( path_ );
+  if ( h < 0 ) return;
+  char buf[512], name[FolderSize];
+  int len = 0, n;
+  while ( ( n = fs_.read( h, buf, sizeof( buf ) ) ) > 0 ) {
+    for ( int i = 0; i < n; i++ ) {
+      if ( (unsigned char)buf[i] <= ' ' ) markFavorite( library, name, len );
+      else if ( len < FolderSize - 1 ) name[len++] = buf[i];
     }
-    char *name = s;
-    while ( (unsigned char)*s > ' ' ) s++;
-    char sep = *s;
-    *s = 0;
-    int g = library.find( name );
-    if ( g >= 0 ) library.at( g ).flags |= GameFavorite;
-    if ( sep == 0 ) break;
-    s++;
   }
-  free( buf );
+  markFavorite( library, name, len );
+  fs_.close( h );
 }
 
 void FavFileRepository::save( const GameLibrary &library ) {

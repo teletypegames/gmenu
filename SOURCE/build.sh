@@ -43,7 +43,7 @@ MENU="lib/ui/list_cursor.cpp
       service/library_service.cpp service/launch_service.cpp service/picker_service.cpp
       controller/menu_input.cpp controller/list_runner.cpp controller/game_list_controller.cpp
       controller/detail_controller.cpp controller/picker_controller.cpp controller/help_controller.cpp
-      view/frame.cpp view/game_list_view.cpp view/detail_view.cpp view/picker_view.cpp view/help_view.cpp
+      view/frame.cpp view/game_list_view.cpp view/detail_view.cpp view/picker_view.cpp view/help_view.cpp view/scan_view.cpp
       app/gmenu.cpp"
 EDIT="model/locations.cpp model/metadata_form.cpp model/executable_list.cpp
       repository/files/folder_metadata_repository.cpp service/metadata_edit_service.cpp
