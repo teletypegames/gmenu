@@ -39,7 +39,7 @@ static void append( char *out, const char *label, const char *value ) {
 
 void GameListView::title( char *out ) const {
   const FilterCriteria &c = session_.criteria;
-  strcpy( out, "Games  (" );
+  strcpy( out, "GMenu Launcher  (" );
   strcat( out, where_.gameDir );
   strcat( out, ")" );
   if ( c.filtersActive() || c.searchLen ) {

@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Found: 1 of 8  No METADATA.INI                  1/1
+ GMenu Launcher  (\COLLECT)  Found: 1 of 8  No METADATA.INI         1/1
  Title                                        Genre           Year Folder
  DELTA                                                             DELTA
 

@@ -38,7 +38,7 @@ rm -rf "$NEW" "$OLD"
 mkdir "$NEW"
 # GMENU.BAT keeps its CRLF line ends: it is copied, not regenerated.
 cp GMENU.BAT GMENUPRG.EXE GMEDIT.EXE README.md LICENSE.md "$NEW/"
-printf '[program]\r\nname=GMENU\r\ndescription=Game menu for DOS: lists the game folders with their title, genre and year, searches and filters them, and starts the game you pick. Edit GMENU.BAT to set the game directory.\r\nversion=%s\r\n' \
+printf '[program]\r\nname=GMenu Launcher\r\ndescription=Game menu for DOS: lists the game folders with their title, genre and year, searches and filters them, and starts the game you pick. Edit GMENU.BAT to set the game directory.\r\nversion=%s\r\n' \
   "$VERSION" > "$NEW/INFO.INI"
 (
   cd "$NEW"

@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Found: 2 of 8  No METADATA.INI                  1/2
+ GMenu Launcher  (\COLLECT)  Found: 2 of 8  No METADATA.INI         1/2
  Title                                        Genre           Year Folder
  Charlie's Quest                                                   CHARLIE
  DELTA                                                             DELTA

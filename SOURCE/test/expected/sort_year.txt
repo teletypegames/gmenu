@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Sort: year                                      4/8
+ GMenu Launcher  (\COLLECT)  Sort: year                             4/8
  Title                                        Genre           Year Folder
  Foxtrot                                      Adventure       1985 FOXTROT
  Echo Base                                    Strategy        1988 ECHO

@@ -2,7 +2,11 @@ GMENU – a small game menu for DOS / DOSBox.
 
 **Install:** unzip `GMENU-<version>.zip` to the DOS drive (for example `C:\APPS\GMENU`), set the game directory in `GMENU.BAT`, and start the menu with `GMENU` (without `.BAT`). To update an installed menu, copy `GMENUPRG.EXE`, `GMEDIT.EXE` and the new `GMENU.BAT` into its folder (keep your game directory in `GMENU.BAT`). See `README.md` for `METADATA.INI` and all the keys (F1 in the menu).
 
-**New in 2.2.1:**
+**New in 2.2.2:**
+
+- The store and the title of the game list call it GMenu Launcher; the folder, `GMENU.BAT` and the programs keep their names. To update, copy `GMENUPRG.EXE`
+
+**2.2.1:**
 
 - `GMENU.BAT` starts the menu when it is started with the `.BAT` extension too (for example from Total Commander or Windows 98): it then runs the menu from `C:\APPS\GMENU`, the default folder (where DOSINST installs it). To update, copy the new `GMENU.BAT` (keep your game directory in it)
 

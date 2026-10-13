@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Sort: most played                               1/8
+ GMenu Launcher  (\COLLECT)  Sort: most played                      1/8
  Title                                        Genre           Year Folder
  Alpha Strike                                 Action          1991 ALPHA
  Bravo Racing                                 Racing          1993 BRAVO

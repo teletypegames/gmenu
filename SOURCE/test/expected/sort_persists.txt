@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Sort: genre                                     1/8
+ GMenu Launcher  (\COLLECT)  Sort: genre                            1/8
  Title                                        Genre           Year Folder
  Alpha Strike                                 Action          1991 ALPHA
  Foxtrot                                      Adventure       1985 FOXTROT

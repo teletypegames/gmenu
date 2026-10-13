@@ -1,4 +1,4 @@
- Games  (\COLLECT)                                                  1/8
+ GMenu Launcher  (\COLLECT)                                         1/8
  Tit╔═ Keys ═══════════════════════════════════════════════════════════════╗
  Alp║  Game list ────────────────────────────────────────────────────────  ║
  Arv║   Enter, click     open the game page                                ║

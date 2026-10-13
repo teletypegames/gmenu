@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Found: 1 of 8                                   1/1
+ GMenu Launcher  (\COLLECT)  Found: 1 of 8                          1/1
  Title                                        Genre           Year Folder
  Hotel Tennis                                 Sports          1990 HOTEL
 

@@ -1,4 +1,4 @@
- Games  (\COLLECT)  Found: 0 of 8                                   0/0
+ GMenu Launcher  (\COLLECT)  Found: 0 of 8                          0/0
  Title                                        Genre           Year Folder
 
    No games match the search / filters.  (Esc: clear, F5: clear filters)
