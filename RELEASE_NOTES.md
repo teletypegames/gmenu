@@ -20,7 +20,7 @@ GMENU – a small game menu for DOS / DOSBox.
 
 **New in 2.1.0:**
 
-- The code is rebuilt in layers (model, repositories, services, controllers, views) on doslib, the library GMENU shares with DOSINST; the menu and GMEDIT work as in 2.0.0, and their files are the same. To update, copy `GMENUPRG.EXE` and `GMEDIT.EXE` (`GMENU.BAT` did not change)
+- The code is rebuilt in layers (model, repositories, services, controllers, views) on DOSLIB, the library GMENU shares with DOSINST; the menu and GMEDIT work as in 2.0.0, and their files are the same. To update, copy `GMENUPRG.EXE` and `GMEDIT.EXE` (`GMENU.BAT` did not change)
 - `GMENU.IDX` and `GMENU.STA` no longer get random bytes after the folder names
 - Unit tests on the host and a layer check run in the pipeline before the DOSBox tests
 

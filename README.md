@@ -48,7 +48,7 @@ Both programs are built from the same layers; each layer uses only the ones belo
 | `SOURCE/controller` | The pages: the game list, the game page, the pickers, the help, GMEDIT's form; `ListRunner` moves in a list with the keys and the mouse. |
 | `SOURCE/view` | Drawing the pages. |
 | `SOURCE/app` | `runGmenu` and `runGmedit`: put the layers together for a machine. |
-| `SOURCE/lib` | doslib, shared with [DOSINST](https://git.teletypegames.org/dos/dosinst): strings, INI, UTF-8, the screen, the keyboard, the mouse, the file system, the test helpers. |
+| `SOURCE/lib` | DOSLIB, shared with [DOSINST](https://git.teletypegames.org/dos/dosinst): strings, INI, UTF-8, the screen, the keyboard, the mouse, the file system, the test helpers. |
 
 The rules of the code (C++98 for Open Watcom, interfaces, names, format) are in `SOURCE/lib/README.md`.
 
