@@ -1,0 +1,12 @@
+{
+  "name": "gmenu",
+  "title": "GMENU",
+  "author": "Teletype Games",
+  "desc": "Game menu for DOS: lists the game folders with their title, genre and year, searches and filters them, and starts the game you pick.",
+  "license": "MIT",
+  "category": "tool",
+  "repo": "https://git.teletypegames.org/dos/gmenu",
+  "dos": {
+    "folder": "GMENU"
+  }
+}
