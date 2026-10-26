@@ -7,6 +7,15 @@
   "category": "tool",
   "repo": "https://git.teletypegames.org/dos/gmenu",
   "dos": {
-    "folder": "GMENU"
+    "folder": "GMENU",
+    "files": [
+      "GMENU.BAT",
+      "GMENUPRG.EXE",
+      "GMEDIT.EXE",
+      "README.md",
+      "LICENSE.md"
+    ],
+    "store_name": "GMenu Launcher",
+    "store_description": "Game menu for DOS: lists the game folders with their title, genre and year, searches and filters them, and starts the game you pick. Edit GMENU.BAT to set the game directory."
   }
 }
