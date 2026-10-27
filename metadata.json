@@ -1,5 +1,6 @@
 {
   "name": "gmenu",
+  "version": "2.3.0",
   "title": "GMENU",
   "author": "Teletype Games",
   "desc": "Game menu for DOS: lists the game folders with their title, genre and year, searches and filters them, and starts the game you pick.",
