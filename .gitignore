@@ -8,4 +8,5 @@ GMENU.STA
 GMENU.IDX
 SOURCE/test/expected/*.got
 dist/
+/.release-assets
 *.err

@@ -225,7 +225,7 @@ A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` run
 
 ## Releases
 
-`.woodpecker.yaml` is a `platform: dos` marker: the WarpEngine of teletypegames.org serves the pipeline. Pushing a `vX.Y.Z` tag makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.EXE` and `GMEDIT.EXE` (to update an installed menu), and the release in the WarpEngine catalog. What a release holds is the `dos` block of `metadata.json`.
+`.woodpecker.yaml` is a `platform: dos` marker: the WarpEngine of teletypegames.org serves the pipeline. Pushing a `vX.Y.Z` tag makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.EXE` and `GMEDIT.EXE` (to update an installed menu), and the release in the WarpEngine catalog, whose DOS shelf is the DOSINST store: the engine puts the `GMENU` folder there. What a release holds is the `dos` block of `metadata.json`.
 
 The same tag also puts the menu into the [DOSINST](https://git.teletypegames.org/dos/dosinst) program store (`ftp://ftp.teletypegames.org/APPS`), so a DOS machine running DOSINST can install and update it: the `GMENU` folder with an `INFO.INI` (the version is the tag without the `v`) and a `FILES.LST`.
 
