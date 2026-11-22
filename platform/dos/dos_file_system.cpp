@@ -56,6 +56,10 @@ int DosFileSystem::write( int handle, const void *buf, unsigned len ) {
   return ::write( handle, buf, len );
 }
 
+bool DosFileSystem::seek( int handle, long offset ) {
+  return lseek( handle, offset, SEEK_SET ) == offset;
+}
+
 bool DosFileSystem::close( int handle ) {
   return ::close( handle ) == 0;
 }

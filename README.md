@@ -1,11 +1,11 @@
-# doslib
+# DOSLIB
 
-The code that the `dos/` programs ([DOSINST](https://git.teletypegames.org/dos/dosinst), [GMENU](https://git.teletypegames.org/dos/gmenu)) share, and the rules their code follows. Each program has it in its `SOURCE/lib` folder as a git subtree, so it builds on its own (also in CI):
+The code that the `dos/` programs ([WEDOS](https://git.teletypegames.org/dos/we-dos), [GMENU](https://git.teletypegames.org/dos/gmenu)) share, and the rules their code follows. Each program has it in its `SOURCE/lib` folder as a git subtree, so it builds on its own (also in CI):
 
 ```sh
-# in the program's repository: take the newest doslib
+# in the program's repository: take the newest DOSLIB
 git subtree pull --prefix=SOURCE/lib ssh://git@git.teletypegames.org:2222/dos/doslib master --squash
-# a change made in SOURCE/lib goes back to doslib
+# a change made in SOURCE/lib goes back to DOSLIB
 git subtree push --prefix=SOURCE/lib ssh://git@git.teletypegames.org:2222/dos/doslib master
 ```
 
@@ -20,14 +20,14 @@ tools/host_test.sh test/build/unit core/*.cpp net/*.cpp ui/*.cpp platform/file_s
 
 | Folder | What |
 |---|---|
-| `core` | No I/O at all: strings and 8.3 names (`str`), INI files (`ini`), UTF-8 and code page 437 (`text`), CRC-32, `Error`, `NameList`, `Progress`, shell sort. |
+| `core` | No I/O at all: strings and 8.3 names (`str`), INI files (`ini`), UTF-8 and code page 437 (`text`), code pages 437 and 852 with one byte a character (`code_page`), CRC-32, `Error`, `NameList`, `Progress`, shell sort. |
 | `platform` | The interfaces of the machine: `Screen`, `Keyboard`, `Mouse`, `Clock`, `Idle`, `FileSystem`, `Network`, `Speaker`, `TextOutput`, and helpers on them (`readFile`, `makeFolders`, `removeTree`). |
 | `platform/dos` | Their DOS implementations (video memory, BIOS, INT 33h, the Open Watcom C library; `DosFileSystem` also serves the Win32 builds). |
 | `platform/win32` | Their Win32 console implementations. |
 | `net` | The FTP client on `Network`, and the byte sinks of the downloads. |
 | `ui` | Drawing on a `Screen` (`Canvas`), the BIOS key codes (`keys.h`), `ListCursor`. |
 | `testing` | The hooks of the test builds: `ScriptedKeyboard` (keys from a text), `dumpScreen` (SCREEN.BIN). `testing/host`: test doubles and a small test framework for the unit tests on the host. |
-| `test` | The unit tests of doslib. |
+| `test` | The unit tests of DOSLIB. |
 | `tools` | `watcom.sh` (sourced by the build scripts), `check_layers.py`, `host_test.sh`, `format.sh`. |
 
 ## Layers

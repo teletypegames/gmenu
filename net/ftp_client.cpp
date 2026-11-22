@@ -130,6 +130,24 @@ int FtpClient::command( const char *fmt, ... ) {
   return readReply();
 }
 
+bool FtpClient::login( const char *user, const char *password ) {
+  int code = command( "USER %s", user );
+  if ( code == 331 ) code = command( "PASS %s", password );
+  if ( code != 230 ) {
+    error_.set( "Login failed: %s", reply_ );
+    return false;
+  }
+  return true;
+}
+
+bool FtpClient::setBinaryMode() {
+  if ( command( "TYPE I" ) != 200 ) {
+    error_.set( "TYPE I failed: %s", reply_ );
+    return false;
+  }
+  return true;
+}
+
 bool FtpClient::open( const char *host, const unsigned char ip[4], unsigned port, const char *user,
                       const char *password ) {
   memcpy( ip_, ip, 4 );
@@ -139,19 +157,7 @@ bool FtpClient::open( const char *host, const unsigned char ip[4], unsigned port
     error_.set( "Cannot connect to %s:%u", host, port );
     return false;
   }
-  bool ok = readReply() == 220;
-  if ( ok ) {
-    int code = command( "USER %s", user );
-    if ( code == 331 ) code = command( "PASS %s", password );
-    if ( code != 230 ) {
-      error_.set( "Login failed: %s", reply_ );
-      ok = false;
-    }
-  }
-  if ( ok && command( "TYPE I" ) != 200 ) {
-    error_.set( "TYPE I failed: %s", reply_ );
-    ok = false;
-  }
+  bool ok = readReply() == 220 && login( user, password ) && setBinaryMode();
   if ( !ok ) {
     if ( !error_.isSet() ) error_.set( "FTP error: %s", reply_ );
     close();
@@ -165,12 +171,7 @@ void FtpClient::close() {
   closeHandle( ctrl_ );
 }
 
-bool FtpClient::openData() {
-  int code = command( "PASV" );
-  if ( code != 227 ) {
-    if ( code > 0 ) error_.set( "PASV failed: %s", reply_ );
-    return false;
-  }
+bool FtpClient::parsePasvPort( unsigned &port ) {
   char *p = strchr( reply_, '(' );
   if ( p == NULL ) {
     p = reply_ + 3;
@@ -182,12 +183,56 @@ bool FtpClient::openData() {
     error_.set( "Bad PASV reply: %s", reply_ );
     return false;
   }
-  data_ = connectTo( ip_, ( hi << 8 ) | lo, DataRecvSize );
+  port = ( hi << 8 ) | lo;
+  return true;
+}
+
+bool FtpClient::openData() {
+  int code = command( "PASV" );
+  if ( code != 227 ) {
+    if ( code > 0 ) error_.set( "PASV failed: %s", reply_ );
+    return false;
+  }
+  unsigned port;
+  if ( !parsePasvPort( port ) ) return false;
+  data_ = connectTo( ip_, port, DataRecvSize );
   if ( data_ < 0 ) {
     error_.set( "Data connection failed" );
     return false;
   }
   return true;
+}
+
+bool FtpClient::receiveData( ByteSink &sink, const char *label, TransferObserver *observer ) {
+  unsigned long last = clock_.ms();
+  unsigned long shown = last;
+  unsigned long total = 0;
+  for ( ;; ) {
+    if ( net_.interrupted() ) {
+      error_.set( "Interrupted" );
+      return false;
+    }
+    int n = net_.receive( data_, xfer_, sizeof( xfer_ ) );
+    if ( n == -1 ) {
+      error_.set( "Data connection error" );
+      return false;
+    }
+    if ( n == Network::Closed ) return true;
+    if ( n > 0 ) {
+      total += n;
+      if ( !sink.write( xfer_, n, error_ ) ) return false;
+      last = clock_.ms();
+      if ( observer && last - shown > ProgressEvery ) {
+        observer->transferred( label, total );
+        shown = last;
+      }
+      continue;
+    }
+    if ( clock_.ms() - last > DataTimeout ) {
+      error_.set( "Transfer timed out" );
+      return false;
+    }
+  }
 }
 
 int FtpClient::transfer( const char *command, const char *arg, ByteSink &sink, const char *label,
@@ -198,43 +243,7 @@ int FtpClient::transfer( const char *command, const char *arg, ByteSink &sink, c
     closeHandle( data_ );
     return code < 0 ? -1 : code;
   }
-
-  unsigned long last = clock_.ms();
-  unsigned long shown = last;
-  unsigned long total = 0;
-  bool ok = true;
-  for ( ;; ) {
-    if ( net_.interrupted() ) {
-      error_.set( "Interrupted" );
-      ok = false;
-      break;
-    }
-    int n = net_.receive( data_, xfer_, sizeof( xfer_ ) );
-    if ( n == -1 ) {
-      error_.set( "Data connection error" );
-      ok = false;
-      break;
-    }
-    if ( n == Network::Closed ) break;
-    if ( n > 0 ) {
-      total += n;
-      if ( !sink.write( xfer_, n, error_ ) ) {
-        ok = false;
-        break;
-      }
-      last = clock_.ms();
-      if ( observer && last - shown > ProgressEvery ) {
-        observer->transferred( label, total );
-        shown = last;
-      }
-      continue;
-    }
-    if ( clock_.ms() - last > DataTimeout ) {
-      error_.set( "Transfer timed out" );
-      ok = false;
-      break;
-    }
-  }
+  bool ok = receiveData( sink, label, observer );
   closeHandle( data_ );
   if ( !ok ) return -1;
   code = readReply();
@@ -249,6 +258,14 @@ int FtpClient::retrieve( const char *path, ByteSink &sink, const char *label, Tr
   return transfer( "RETR %s", path, sink, label, observer );
 }
 
+static const char *cleanName( char *line ) {
+  char *name = trim( line );
+  char *slash = strrchr( name, '/' );
+  if ( slash ) name = slash + 1;
+  if ( !*name || strcmp( name, "." ) == 0 || strcmp( name, ".." ) == 0 ) return NULL;
+  return name;
+}
+
 static int compactNames( char *buf ) {
   int count = 0;
   char *out = buf;
@@ -257,12 +274,11 @@ static int compactNames( char *buf ) {
     char *next = strchr( line, '\n' );
     if ( next ) *next++ = 0;
     else next = line + strlen( line );
-    char *name = trim( line );
-    char *slash = strrchr( name, '/' );
-    if ( slash ) name = slash + 1;
-    if ( *name && strcmp( name, "." ) != 0 && strcmp( name, ".." ) != 0 ) {
-      memmove( out, name, strlen( name ) + 1 );
-      out += strlen( out ) + 1;
+    const char *name = cleanName( line );
+    if ( name ) {
+      unsigned len = strlen( name ) + 1;
+      memmove( out, name, len );
+      out += len;
       count++;
     }
     line = next;

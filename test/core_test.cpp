@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "../core/code_page.h"
 #include "../core/crc32.h"
 #include "../core/error.h"
 #include "../core/ini.h"
@@ -134,4 +135,33 @@ TEST( nameListAddsAndWalks ) {
   n = names.next( n );
   CHECK_STR( n, "TWO" );
   CHECK( names.next( n ) == NULL );
+}
+
+TEST( utf8BecomesCodePage852WithTheHungarianLetters ) {
+  char s[] = "\xC5\x91\xC5\xB1\xC3\x81 \xE2\x94\x80\xE2\x95\x90";
+  CHECK_INT( utf8ToCodePage( s, CodePage852 ), 6 );
+  CHECK_STR( s, "\x8B\xFB\xB5 \xC4\xCD" );
+}
+
+TEST( utf8BecomesCodePage437OneByteACharacter ) {
+  char s[] = "\xC5\x91\xC3\x81\xE2\x80\xA2\xE2\x94\x82\xF0\x9F\x98\x80\xE2\x80\x94x";
+  CHECK_INT( utf8ToCodePage( s, CodePage437 ), 7 );
+  CHECK_STR( s, "\x94"
+                "A\x07\xB3?-x" );
+}
+
+TEST( codePageKeepsBadBytesAndDropsTheBom ) {
+  char s[] = "\xEF\xBB\xBF\x81\xC5x";
+  CHECK_INT( utf8ToCodePage( s, CodePage852 ), 3 );
+  CHECK_STR( s, "\x81\xC5x" );
+}
+
+TEST( foldLetterDropsTheAccent ) {
+  CHECK_INT( foldLetter( 0x8B, CodePage852 ), 'O' );
+  CHECK_INT( foldLetter( 0x82, CodePage437 ), 'E' );
+  CHECK_INT( foldLetter( 'a', CodePage437 ), 'A' );
+  CHECK_INT( foldLetter( 0xC4, CodePage852 ), 0xC4 );
+  CodePage cp;
+  CHECK( codePageOf( 852, cp ) && cp == CodePage852 );
+  CHECK( !codePageOf( 850, cp ) );
 }

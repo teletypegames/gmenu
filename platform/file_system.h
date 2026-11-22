@@ -40,6 +40,8 @@ public:
   /* The bytes read or written, -1 on an error. */
   virtual int read( int handle, void *buf, unsigned size ) = 0;
   virtual int write( int handle, const void *buf, unsigned len ) = 0;
+  /* To offset bytes from the start of the file: false on an error. */
+  virtual bool seek( int handle, long offset ) = 0;
   /* false when the data could not be written */
   virtual bool close( int handle ) = 0;
 

@@ -33,6 +33,7 @@ public:
   int create( const char *path );
   int read( int handle, void *buf, unsigned size );
   int write( int handle, const void *buf, unsigned len );
+  bool seek( int handle, long offset );
   bool close( int handle );
   bool remove( const char *path );
   bool rename( const char *from, const char *to );
@@ -59,6 +60,8 @@ private:
   int fileIndex( const char *key ) const;
   int folderIndex( const char *key ) const;
   bool parentExists( const char *key ) const;
+  bool hasChildren( const char *key ) const;
+  int allocHandle( int fileIndex, bool writing );
   void addFolders( const char *key );
   int newFile( const char *key );
   void setData( File &f, const void *data, unsigned len );
