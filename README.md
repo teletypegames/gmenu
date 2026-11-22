@@ -48,13 +48,13 @@ Both programs are built from the same layers; each layer uses only the ones belo
 | `SOURCE/controller` | The pages: the game list, the game page, the pickers, the help, GMEDIT's form; `ListRunner` moves in a list with the keys and the mouse. |
 | `SOURCE/view` | Drawing the pages. |
 | `SOURCE/app` | `runGmenu` and `runGmedit`: put the layers together for a machine. |
-| `SOURCE/lib` | DOSLIB, shared with [DOSINST](https://git.teletypegames.org/dos/dosinst): strings, INI, UTF-8, the screen, the keyboard, the mouse, the file system, the test helpers. |
+| `SOURCE/lib` | DOSLIB, shared with [WEDOS](https://git.teletypegames.org/dos/we-dos): strings, INI, UTF-8, the screen, the keyboard, the mouse, the file system, the test helpers. |
 
 The rules of the code (C++98 for Open Watcom, interfaces, names, format) are in `SOURCE/lib/README.md`.
 
 ## Installation
 
-1. Copy the `GMENU` folder to the DOS drive, for example to `C:\APPS\GMENU\` (the default, where DOSINST installs it). It can be in any folder (for example `C:\TOOLS\GMENU\`); then also change `C:\APPS\GMENU` in `GMENU.BAT` (see below). The menu needs only `GMENU.BAT` and `GMENUPRG.EXE`, and `GMEDIT.EXE` for editing `METADATA.INI` files.
+1. Copy the `GMENU` folder to the DOS drive, for example to `C:\APPS\GMENU\` (the default, where WEDOS installs it). It can be in any folder (for example `C:\TOOLS\GMENU\`); then also change `C:\APPS\GMENU` in `GMENU.BAT` (see below). The menu needs only `GMENU.BAT` and `GMENUPRG.EXE`, and `GMEDIT.EXE` for editing `METADATA.INI` files.
 2. Put the games in one common directory. Give each game its own folder, and put a `METADATA.INI` (or at least a `NAME.TXT`) in each folder:
    ```
    C:\COLLECT\
@@ -225,9 +225,9 @@ A failed case writes its result to `expected/<case>.got`. `.woodpecker.yaml` run
 
 ## Releases
 
-`.woodpecker.yaml` is a `platform: dos` marker: the WarpEngine of teletypegames.org serves the pipeline. The `vX.Y.Z` tag of a release makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.EXE` and `GMEDIT.EXE` (to update an installed menu), and the release in the WarpEngine catalog, whose DOS shelf is the DOSINST store: the engine puts the `GMENU` folder there. What a release holds is the `dos` block of `metadata.json`.
+`.woodpecker.yaml` is a `platform: dos` marker: the WarpEngine of teletypegames.org serves the pipeline. The `vX.Y.Z` tag of a release makes Woodpecker build and test the programs, then publish a Gitea release with `RELEASE_NOTES.md` as its text and three files: `GMENU-vX.Y.Z.zip` (the `GMENU` folder to install), `GMENUPRG.EXE` and `GMEDIT.EXE` (to update an installed menu), and the release in the WarpEngine catalog, whose DOS shelf is the WEDOS store: the engine puts the `GMENU` folder there. What a release holds is the `dos` block of `metadata.json`.
 
-The same tag also puts the menu into the [DOSINST](https://git.teletypegames.org/dos/dosinst) program store (`ftp://ftp.teletypegames.org/APPS`), so a DOS machine running DOSINST can install and update it: the `GMENU` folder with an `INFO.INI` (the version is the tag without the `v`) and a `FILES.LST`.
+The same tag also puts the menu into the [WEDOS](https://git.teletypegames.org/dos/we-dos) program store (`ftp://ftp.teletypegames.org/APPS`), so a DOS machine running WEDOS can install and update it: the `GMENU` folder with an `INFO.INI` (the version is the tag without the `v`) and a `FILES.LST`.
 
 A release is a raised version: raise `version` in `metadata.json`, and push it to master. The pipeline tags the commit `vX.Y.Z` itself, and that tag's pipeline makes the release. A push that leaves the version as it is only builds and tests; a tag made by hand still works, but has to match the version. Off master a push builds a `dev-` version, which never reaches the store.
 
