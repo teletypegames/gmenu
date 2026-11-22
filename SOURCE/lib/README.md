@@ -1,6 +1,6 @@
 # DOSLIB
 
-The code that the `dos/` programs ([DOSINST](https://git.teletypegames.org/dos/dosinst), [GMENU](https://git.teletypegames.org/dos/gmenu)) share, and the rules their code follows. Each program has it in its `SOURCE/lib` folder as a git subtree, so it builds on its own (also in CI):
+The code that the `dos/` programs ([WEDOS](https://git.teletypegames.org/dos/we-dos), [GMENU](https://git.teletypegames.org/dos/gmenu)) share, and the rules their code follows. Each program has it in its `SOURCE/lib` folder as a git subtree, so it builds on its own (also in CI):
 
 ```sh
 # in the program's repository: take the newest DOSLIB
@@ -20,7 +20,7 @@ tools/host_test.sh test/build/unit core/*.cpp net/*.cpp ui/*.cpp platform/file_s
 
 | Folder | What |
 |---|---|
-| `core` | No I/O at all: strings and 8.3 names (`str`), INI files (`ini`), UTF-8 and code page 437 (`text`), CRC-32, `Error`, `NameList`, `Progress`, shell sort. |
+| `core` | No I/O at all: strings and 8.3 names (`str`), INI files (`ini`), UTF-8 and code page 437 (`text`), code pages 437 and 852 with one byte a character (`code_page`), CRC-32, `Error`, `NameList`, `Progress`, shell sort. |
 | `platform` | The interfaces of the machine: `Screen`, `Keyboard`, `Mouse`, `Clock`, `Idle`, `FileSystem`, `Network`, `Speaker`, `TextOutput`, and helpers on them (`readFile`, `makeFolders`, `removeTree`). |
 | `platform/dos` | Their DOS implementations (video memory, BIOS, INT 33h, the Open Watcom C library; `DosFileSystem` also serves the Win32 builds). |
 | `platform/win32` | Their Win32 console implementations. |

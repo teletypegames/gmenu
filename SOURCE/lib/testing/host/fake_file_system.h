@@ -33,6 +33,7 @@ public:
   int create( const char *path );
   int read( int handle, void *buf, unsigned size );
   int write( int handle, const void *buf, unsigned len );
+  bool seek( int handle, long offset );
   bool close( int handle );
   bool remove( const char *path );
   bool rename( const char *from, const char *to );

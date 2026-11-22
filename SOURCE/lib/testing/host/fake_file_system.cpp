@@ -235,6 +235,13 @@ int FakeFileSystem::write( int handle, const void *buf, unsigned len ) {
   return (int)len;
 }
 
+bool FakeFileSystem::seek( int handle, long offset ) {
+  if ( handle < 0 || handle >= MaxHandles || !handles_[handle].used || handles_[handle].writing ) return false;
+  if ( offset < 0 || (unsigned long)offset > files_[handles_[handle].file].size ) return false;
+  handles_[handle].pos = (unsigned)offset;
+  return true;
+}
+
 bool FakeFileSystem::close( int handle ) {
   if ( handle < 0 || handle >= MaxHandles || !handles_[handle].used ) return false;
   handles_[handle].used = false;

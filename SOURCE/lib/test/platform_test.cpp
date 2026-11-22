@@ -42,6 +42,21 @@ TEST( readTextTerminates ) {
   CHECK_INT( readText( fs, "C:\\NONE.TXT", buf, sizeof( buf ) ), -1 );
 }
 
+TEST( seekMovesTheReadPosition ) {
+  FakeFileSystem fs;
+  fs.add( "C:\\A.TXT", "0123456789" );
+  int h = fs.openRead( "C:\\A.TXT" );
+  char buf[4] = { 0 };
+  CHECK( fs.seek( h, 7 ) );
+  CHECK_INT( fs.read( h, buf, 3 ), 3 );
+  CHECK_STR( buf, "789" );
+  CHECK( fs.seek( h, 0 ) );
+  CHECK_INT( fs.read( h, buf, 1 ), 1 );
+  CHECK( buf[0] == '0' );
+  CHECK( !fs.seek( h, 11 ) );
+  fs.close( h );
+}
+
 TEST( canvasFieldPadsAndCuts ) {
   MemoryScreen screen;
   Canvas canvas( screen );
